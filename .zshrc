@@ -51,7 +51,13 @@ alias dcr='docker compose restart'
 
 # fzf
 if command -v fzf &>/dev/null; then
-  source <(fzf --zsh)
+  if fzf --zsh &>/dev/null 2>&1; then
+    source <(fzf --zsh)
+  else
+    # 구버전 fzf 호환
+    [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
+    [ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
+  fi
 fi
 
 # 플러그인
