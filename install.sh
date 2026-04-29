@@ -97,6 +97,19 @@ if ! command -v delta &>/dev/null; then
   esac
 fi
 
+# pipx + Python 도구 설치
+if ! command -v pipx &>/dev/null; then
+  echo "pipx 설치 중..."
+  pkg_install pipx
+fi
+
+for tool in ruff; do
+  if ! command -v "$tool" &>/dev/null; then
+    echo "$tool 설치 중..."
+    pipx install "$tool"
+  fi
+done
+
 # fnm + Node.js LTS 설치
 if ! command -v fnm &>/dev/null; then
   echo "fnm 설치 중..."
