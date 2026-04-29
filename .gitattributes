@@ -1,3 +1,1 @@
 * text=auto eol=lf
-install.sh text eol=lf diff=sh
-*.sh text eol=lf diff=sh
