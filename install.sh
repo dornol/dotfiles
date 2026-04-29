@@ -106,6 +106,7 @@ backup_if_exists() {
 
 backup_if_exists "$HOME/.config/nvim"
 backup_if_exists "$HOME/.gitconfig"
+backup_if_exists "$HOME/.claude/settings.json"
 
 echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
 stow --dir="$DOTFILES_DIR" --target="$HOME" --restow .
