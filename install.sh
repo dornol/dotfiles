@@ -66,10 +66,18 @@ if ! command -v starship &>/dev/null; then
   curl -sS https://starship.rs/install.sh | sh -s -- --yes
 fi
 
-# fzf 설치
+# fzf 설치 (최신 버전 GitHub에서 직접)
 if ! command -v fzf &>/dev/null; then
   echo "fzf 설치 중..."
-  pkg_install fzf
+  case "$OS" in
+    Linux)
+      FZF_VERSION=$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep tag_name | cut -d'"' -f4)
+      curl -sL "https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz" | tar -xz -C ~/.local/bin
+      ;;
+    Darwin)
+      brew install fzf
+      ;;
+  esac
 fi
 
 # delta 설치
