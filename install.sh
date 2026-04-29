@@ -16,7 +16,18 @@ fi
 # 패키지 매니저로 설치
 pkg_install() {
   case "$OS" in
-    Linux)  sudo apt-get install -y "$@" ;;
+    Linux)
+      if command -v apt-get &>/dev/null; then
+        sudo apt-get install -y "$@"
+      elif command -v dnf &>/dev/null; then
+        sudo dnf install -y "$@"
+      elif command -v yum &>/dev/null; then
+        sudo yum install -y "$@"
+      else
+        echo "지원하지 않는 패키지 매니저입니다."
+        exit 1
+      fi
+      ;;
     Darwin) brew install "$@" ;;
   esac
 }
