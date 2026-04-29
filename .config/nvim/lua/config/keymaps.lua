@@ -21,6 +21,12 @@ map("n", "N", "Nzzzv")
 -- 붙여넣기 시 레지스터 보호
 map("x", "<leader>p", [["_dP]], { desc = "Paste Without Yanking" })
 
+-- insert 모드 undo 브레이크포인트 (특수문자 입력 시 undo 단위 분리)
+map("i", ",", ",<C-g>u")
+map("i", ".", ".<C-g>u")
+map("i", "!", "!<C-g>u")
+map("i", "?", "?<C-g>u")
+
 -- Harpoon
 local ok, harpoon = pcall(require, "harpoon")
 if ok then
