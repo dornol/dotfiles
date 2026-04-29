@@ -4,6 +4,12 @@
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "autoUpdatesChannel": "latest",
+  "effortLevel": "medium",
+  "includeGitInstructions": false,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "hooks": {
     "Notification": [
       {
