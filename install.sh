@@ -138,8 +138,15 @@ if [ "$SHELL" != "$(which zsh)" ]; then
 fi
 
 # 기존 파일이 심볼릭 링크가 아닌 실제 파일/디렉토리면 백업 후 제거
+# dotfiles 디렉토리 안의 파일은 건드리지 않음
 backup_if_exists() {
   local target="$1"
+  local real
+  real=$(realpath "$target" 2>/dev/null || echo "")
+  # dotfiles 디렉토리 안의 파일이면 스킵
+  if [[ "$real" == "$DOTFILES_DIR"* ]]; then
+    return
+  fi
   if [ -e "$target" ] && [ ! -L "$target" ]; then
     local backup="${target}.bak.$(date +%Y%m%d%H%M%S)"
     echo "백업 중... ($target -> $backup)"
