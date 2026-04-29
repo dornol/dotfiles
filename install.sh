@@ -125,17 +125,10 @@ if command -v fnm &>/dev/null && ! fnm list | grep -q lts; then
   fnm default lts-latest
 fi
 
-# 기본 셸을 zsh로 변경
-CURRENT_SHELL=$(grep "^$USER:" /etc/passwd | cut -d: -f7)
-if [ "$CURRENT_SHELL" != "$(which zsh)" ]; then
-  echo "기본 셸을 zsh로 변경 중..."
-  chsh -s "$(which zsh)" 2>/dev/null || {
-    # chsh 실패 시 .bashrc에 zsh 자동 전환 추가
-    if ! grep -q "exec zsh" "$HOME/.bashrc" 2>/dev/null; then
-      echo '[ -x "$(which zsh)" ] && exec zsh -l' >> "$HOME/.bashrc"
-      echo "zsh 자동 전환을 .bashrc에 추가했습니다."
-    fi
-  }
+# .bashrc에 zsh 자동 전환 추가
+if ! grep -q "exec zsh" "$HOME/.bashrc" 2>/dev/null; then
+  echo '[ -x "$(which zsh)" ] && exec zsh -l' >> "$HOME/.bashrc"
+  echo "zsh 자동 전환을 .bashrc에 추가했습니다."
 fi
 
 # 기존 파일이 심볼릭 링크가 아닌 실제 파일/디렉토리면 백업 후 제거
