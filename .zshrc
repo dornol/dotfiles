@@ -30,8 +30,10 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 alias grep='grep --color=auto'
-alias vi='nvim'
-alias vim='nvim'
+if command -v nvim &>/dev/null; then
+  alias vi='nvim'
+  alias vim='nvim'
+fi
 
 # docker alias
 alias d='docker'
