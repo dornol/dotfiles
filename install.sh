@@ -4,6 +4,8 @@ set -e
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OS="$(uname -s)"
 
+mkdir -p "$HOME/.local/bin"
+
 # 의존성 확인
 deps_ok=true
 for cmd in git nvim; do
