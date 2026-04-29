@@ -44,12 +44,14 @@ if ! command -v stow &>/dev/null; then
   pkg_install stow
 fi
 
-# nvim 설치
+# nvim 설치 (GitHub에서 최신 버전)
 if ! command -v nvim &>/dev/null; then
   echo "nvim 설치 중..."
   case "$OS" in
     Linux)
-      sudo snap install nvim --classic 2>/dev/null || pkg_install neovim
+      NVIM_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x86_64")
+      curl -sL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" | sudo tar -xz -C /opt
+      sudo ln -sf "/opt/nvim-linux-${NVIM_ARCH}/bin/nvim" /usr/local/bin/nvim
       ;;
     Darwin)
       brew install neovim
