@@ -100,6 +100,7 @@ fi
 # fnm + Node.js LTS 설치
 if ! command -v fnm &>/dev/null; then
   echo "fnm 설치 중..."
+  pkg_install unzip
   curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir ~/.local/bin --skip-shell
 fi
 
