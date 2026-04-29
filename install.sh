@@ -66,13 +66,18 @@ if [ "$SHELL" != "$(which zsh)" ]; then
   chsh -s "$(which zsh)"
 fi
 
-# 기존 ~/.config/nvim이 심볼릭 링크가 아닌 실제 디렉토리면 백업 후 제거
-NVIM_CONFIG="$HOME/.config/nvim"
-if [ -d "$NVIM_CONFIG" ] && [ ! -L "$NVIM_CONFIG" ]; then
-  BACKUP="$HOME/.config/nvim.bak.$(date +%Y%m%d%H%M%S)"
-  echo "기존 nvim 설정 백업 중... ($NVIM_CONFIG -> $BACKUP)"
-  mv "$NVIM_CONFIG" "$BACKUP"
-fi
+# 기존 파일이 심볼릭 링크가 아닌 실제 파일/디렉토리면 백업 후 제거
+backup_if_exists() {
+  local target="$1"
+  if [ -e "$target" ] && [ ! -L "$target" ]; then
+    local backup="${target}.bak.$(date +%Y%m%d%H%M%S)"
+    echo "백업 중... ($target -> $backup)"
+    mv "$target" "$backup"
+  fi
+}
+
+backup_if_exists "$HOME/.config/nvim"
+backup_if_exists "$HOME/.gitconfig"
 
 echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
 stow --dir="$DOTFILES_DIR" --target="$HOME" --restow .

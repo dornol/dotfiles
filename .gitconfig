@@ -1,0 +1,19 @@
+[user]
+	name = DongHyeok Kim
+	email = dhkim@bookswage.com
+
+[core]
+	fileMode = false
+	autocrlf = false
+
+[alias]
+	st = status
+	co = checkout
+	br = branch
+	lg = log --oneline --graph --decorate --all
+
+[pull]
+	rebase = false
+
+[init]
+	defaultBranch = main
