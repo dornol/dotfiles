@@ -129,12 +129,14 @@ if ! command -v pipx &>/dev/null; then
   pkg_install pipx 2>/dev/null || pip3 install --user pipx 2>/dev/null || true
 fi
 
-for tool in ruff; do
-  if ! command -v "$tool" &>/dev/null; then
-    echo "$tool 설치 중..."
-    pipx install "$tool"
-  fi
-done
+if command -v pipx &>/dev/null; then
+  for tool in ruff; do
+    if ! command -v "$tool" &>/dev/null; then
+      echo "$tool 설치 중..."
+      pipx install "$tool" || true
+    fi
+  done
+fi
 
 # fnm + Node.js LTS 설치
 if ! command -v fnm &>/dev/null; then
