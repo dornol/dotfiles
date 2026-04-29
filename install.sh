@@ -111,14 +111,15 @@ if ! command -v delta &>/dev/null; then
   case "$OS" in
     Linux)
       DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep tag_name | cut -d'"' -f4)
+      DELTA_VER="${DELTA_VERSION#v}"
       DELTA_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "amd64")
       if command -v dpkg &>/dev/null; then
-        curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_${DELTA_ARCH}.deb" -o /tmp/delta.deb
+        curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VER}_${DELTA_ARCH}.deb" -o /tmp/delta.deb
         sudo dpkg -i /tmp/delta.deb
         rm /tmp/delta.deb
       elif command -v rpm &>/dev/null; then
         DELTA_RPM_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-        curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta-${DELTA_VERSION}-1.${DELTA_RPM_ARCH}.rpm" -o /tmp/delta.rpm
+        curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta-${DELTA_VER}-1.${DELTA_RPM_ARCH}.rpm" -o /tmp/delta.rpm
         sudo rpm -i /tmp/delta.rpm
         rm /tmp/delta.rpm
       fi
