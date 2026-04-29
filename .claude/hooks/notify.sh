@@ -31,12 +31,10 @@ case "$OS" in
         [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Claude Code').Show(\$toast)
       " 2>/dev/null &
     elif command -v notify-send &>/dev/null; then
-      # 일반 Linux 데스크탑
       notify-send "Claude Code — $PROJECT_NAME" "$MESSAGE" &
     fi
     ;;
   Darwin)
-    # macOS
     osascript -e "display notification \"$MESSAGE\" with title \"Claude Code — $PROJECT_NAME\"" &
     ;;
 esac
