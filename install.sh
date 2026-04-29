@@ -75,6 +75,6 @@ if [ -d "$NVIM_CONFIG" ] && [ ! -L "$NVIM_CONFIG" ]; then
 fi
 
 echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
-stow --dir="$DOTFILES_DIR" --target="$HOME" .
+stow --dir="$DOTFILES_DIR" --target="$HOME" --restow .
 
 echo "완료! 터미널 재시작하면 zsh로 전환돼."
