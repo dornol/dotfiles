@@ -72,7 +72,8 @@ if ! command -v fzf &>/dev/null; then
   case "$OS" in
     Linux)
       FZF_VERSION=$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep tag_name | cut -d'"' -f4)
-      curl -sL "https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz" | tar -xz -C ~/.local/bin
+      FZF_VER="${FZF_VERSION#v}"
+      curl -sL "https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VER}-linux_amd64.tar.gz" | tar -xz -C ~/.local/bin
       ;;
     Darwin)
       brew install fzf
