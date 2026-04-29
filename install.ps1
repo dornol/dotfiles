@@ -1,20 +1,18 @@
-# Windows용 dotfiles 설치 스크립트
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+# dotfiles installer for Windows
 $DOTFILES = Split-Path -Parent $MyInvocation.MyCommand.Path
 $HOME_DIR = $env:USERPROFILE
 
-# .gitconfig 복사
+# .gitconfig
 $gitconfig = "$HOME_DIR\.gitconfig"
 if ((Test-Path $gitconfig) -and (-not (Get-Item $gitconfig).LinkType)) {
   $backup = "$gitconfig.bak.$(Get-Date -Format 'yyyyMMddHHmmss')"
-  Write-Host "백업 중... ($gitconfig -> $backup)"
+  Write-Host "Backing up... ($gitconfig -> $backup)"
   Move-Item $gitconfig $backup
 }
 Copy-Item "$DOTFILES\.gitconfig" $gitconfig
-Write-Host ".gitconfig 적용 완료"
+Write-Host ".gitconfig done"
 
-# .claude/settings.json 병합 (기존 설정 유지 + dotfiles 값 덮어쓰기)
+# .claude/settings.json (merge)
 $claudeDir = "$HOME_DIR\.claude"
 if (-not (Test-Path $claudeDir)) { New-Item -ItemType Directory -Path $claudeDir | Out-Null }
 
@@ -24,21 +22,20 @@ $dotfilesJson = Get-Content $sourceSettings -Raw | ConvertFrom-Json
 
 if (Test-Path $targetSettings) {
   $existingJson = Get-Content $targetSettings -Raw | ConvertFrom-Json
-  # dotfiles 값으로 기존 설정 덮어쓰기 (기존 키는 유지)
   foreach ($key in $dotfilesJson.PSObject.Properties.Name) {
     $existingJson | Add-Member -MemberType NoteProperty -Name $key -Value $dotfilesJson.$key -Force
   }
   $existingJson | ConvertTo-Json -Depth 10 | Set-Content $targetSettings
-  Write-Host ".claude/settings.json 병합 완료"
+  Write-Host ".claude/settings.json merged"
 } else {
   Copy-Item $sourceSettings $targetSettings
-  Write-Host ".claude/settings.json 적용 완료"
+  Write-Host ".claude/settings.json done"
 }
 
-# .claude/hooks 복사
+# .claude/hooks
 $hooksDir = "$claudeDir\hooks"
 if (-not (Test-Path $hooksDir)) { New-Item -ItemType Directory -Path $hooksDir | Out-Null }
 Copy-Item "$DOTFILES\.claude\hooks\notify.sh" "$hooksDir\notify.sh" -Force
-Write-Host ".claude/hooks/notify.sh 적용 완료"
+Write-Host ".claude/hooks/notify.sh done"
 
-Write-Host "완료!"
+Write-Host "All done!"
