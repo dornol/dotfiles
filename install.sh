@@ -171,7 +171,7 @@ if ! grep -q "exec zsh" "$HOME/.bashrc" 2>/dev/null; then
   echo "zsh 자동 전환을 .bashrc에 추가했습니다."
 elif grep -q 'exec zsh' "$HOME/.bashrc" && ! grep -q '\$-' "$HOME/.bashrc"; then
   # 인터랙티브 체크 없는 구버전이면 교체 (BSD/GNU sed 호환)
-  grep -v 'exec zsh' "$HOME/.bashrc" > /tmp/.bashrc_tmp
+  grep -v 'exec zsh' "$HOME/.bashrc" > /tmp/.bashrc_tmp || true
   echo "$BASHRC_LINE" >> /tmp/.bashrc_tmp
   mv /tmp/.bashrc_tmp "$HOME/.bashrc"
   echo "zsh 자동 전환 코드를 인터랙티브 전용으로 업데이트했습니다."
