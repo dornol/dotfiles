@@ -164,10 +164,15 @@ if command -v fnm &>/dev/null && ! fnm list | grep -q lts; then
   fnm default lts-latest
 fi
 
-# .bashrc에 zsh 자동 전환 추가
+# .bashrc에 zsh 자동 전환 추가 (인터랙티브 셸에서만)
+BASHRC_LINE='[[ $- == *i* ]] && [ -x "$(which zsh)" ] && exec zsh -l'
 if ! grep -q "exec zsh" "$HOME/.bashrc" 2>/dev/null; then
-  echo '[ -x "$(which zsh)" ] && exec zsh -l' >> "$HOME/.bashrc"
+  echo "$BASHRC_LINE" >> "$HOME/.bashrc"
   echo "zsh 자동 전환을 .bashrc에 추가했습니다."
+elif grep -q 'exec zsh' "$HOME/.bashrc" && ! grep -q '\$-' "$HOME/.bashrc"; then
+  # 인터랙티브 체크 없는 구버전이면 교체
+  sed -i 's|.*exec zsh.*|'"$BASHRC_LINE"'|' "$HOME/.bashrc"
+  echo "zsh 자동 전환 코드를 인터랙티브 전용으로 업데이트했습니다."
 fi
 
 # 기존 파일이 심볼릭 링크가 아닌 실제 파일/디렉토리면 백업 후 제거
