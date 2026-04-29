@@ -1,6 +1,15 @@
 # PATH
 export PATH="$HOME/.local/bin:$PATH"
-export PATH="$PATH:/opt/nvim-linux-x86_64/bin"
+
+case "$(uname -s)" in
+  Linux)
+    export PATH="$PATH:/opt/nvim-linux-x86_64/bin"
+    ;;
+  Darwin)
+    # macOS는 brew로 설치된 경로 사용
+    export PATH="$PATH:/opt/homebrew/bin"
+    ;;
+esac
 
 # 히스토리
 HISTSIZE=10000

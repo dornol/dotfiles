@@ -2,6 +2,7 @@
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OS="$(uname -s)"
 
 # 의존성 확인
 deps_ok=true
@@ -13,15 +14,30 @@ for cmd in git nvim; do
 done
 [ "$deps_ok" = false ] && exit 1
 
+# 패키지 매니저로 설치
+pkg_install() {
+  case "$OS" in
+    Linux)  sudo apt-get install -y "$@" ;;
+    Darwin) brew install "$@" ;;
+  esac
+}
+
+# macOS: Homebrew 확인
+if [ "$OS" = "Darwin" ] && ! command -v brew &>/dev/null; then
+  echo "Homebrew 설치 중..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+# stow 설치
 if ! command -v stow &>/dev/null; then
-  echo "stow이 설치되어 있지 않습니다. 설치 중..."
-  sudo apt-get install -y stow
+  echo "stow 설치 중..."
+  pkg_install stow
 fi
 
 # zsh 설치
 if ! command -v zsh &>/dev/null; then
   echo "zsh 설치 중..."
-  sudo apt-get install -y zsh
+  pkg_install zsh
 fi
 
 # zsh 플러그인 설치
