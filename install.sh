@@ -97,6 +97,18 @@ if ! command -v delta &>/dev/null; then
   esac
 fi
 
+# fnm + Node.js LTS 설치
+if ! command -v fnm &>/dev/null; then
+  echo "fnm 설치 중..."
+  curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir ~/.local/bin --skip-shell
+fi
+
+if command -v fnm &>/dev/null && ! fnm list | grep -q lts; then
+  echo "Node.js LTS 설치 중..."
+  fnm install --lts
+  fnm default lts-latest
+fi
+
 # 기본 셸을 zsh로 변경
 if [ "$SHELL" != "$(which zsh)" ]; then
   echo "기본 셸을 zsh로 변경 중..."

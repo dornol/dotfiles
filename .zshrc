@@ -49,6 +49,11 @@ alias dcd='docker compose down'
 alias dcl='docker compose logs -f'
 alias dcr='docker compose restart'
 
+# fnm (Node.js)
+if command -v fnm &>/dev/null; then
+  eval "$(fnm env --use-on-cd)"
+fi
+
 # fzf
 if command -v fzf &>/dev/null; then
   if fzf --zsh &>/dev/null 2>&1; then
