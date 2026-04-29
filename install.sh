@@ -40,6 +40,12 @@ if ! command -v zsh &>/dev/null; then
   pkg_install zsh
 fi
 
+# tmux 설치
+if ! command -v tmux &>/dev/null; then
+  echo "tmux 설치 중..."
+  pkg_install tmux
+fi
+
 # zsh 플러그인 설치
 ZSH_PLUGIN_DIR="$HOME/.zsh/plugins"
 mkdir -p "$ZSH_PLUGIN_DIR"
