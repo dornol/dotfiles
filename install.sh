@@ -58,8 +58,12 @@ if ! command -v nvim &>/dev/null; then
         pkg_install cmake gcc make unzip gettext curl git
         NVIM_TMP=$(mktemp -d)
         git clone --depth=1 --branch stable https://github.com/neovim/neovim.git "$NVIM_TMP"
-        cmake -S "$NVIM_TMP" -B "$NVIM_TMP/build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
-        cmake --build "$NVIM_TMP/build" -j"$(nproc)" --target install
+        cmake -S "$NVIM_TMP" -B "$NVIM_TMP/build" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=/usr/local \
+          -DLUAJIT_USE_BUNDLED=ON \
+          -DUSE_BUNDLED=ON
+        cmake --build "$NVIM_TMP/build" -j"$(nproc)"
         sudo cmake --install "$NVIM_TMP/build"
         rm -rf "$NVIM_TMP"
       else
