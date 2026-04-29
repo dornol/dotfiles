@@ -125,8 +125,8 @@ if command -v fnm &>/dev/null && ! fnm list | grep -q lts; then
   fnm default lts-latest
 fi
 
-# 기본 셸을 zsh로 변경 (getent로 실제 로그인 셸 확인)
-CURRENT_SHELL=$(getent passwd "$USER" | cut -d: -f7)
+# 기본 셸을 zsh로 변경
+CURRENT_SHELL=$(grep "^$USER:" /etc/passwd | cut -d: -f7)
 if [ "$CURRENT_SHELL" != "$(which zsh)" ]; then
   echo "기본 셸을 zsh로 변경 중..."
   chsh -s "$(which zsh)" 2>/dev/null || {
