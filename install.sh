@@ -3,6 +3,7 @@ set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OS="$(uname -s)"
+ARCH="$(uname -m)"
 
 mkdir -p "$HOME/.local/bin"
 
@@ -84,7 +85,8 @@ if ! command -v fzf &>/dev/null; then
     Linux)
       FZF_VERSION=$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep tag_name | cut -d'"' -f4)
       FZF_VER="${FZF_VERSION#v}"
-      curl -sL "https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VER}-linux_amd64.tar.gz" | tar -xz -C ~/.local/bin
+      FZF_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "amd64")
+      curl -sL "https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VER}-linux_${FZF_ARCH}.tar.gz" | tar -xz -C ~/.local/bin
       ;;
     Darwin)
       brew install fzf
@@ -98,7 +100,8 @@ if ! command -v delta &>/dev/null; then
   case "$OS" in
     Linux)
       DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep tag_name | cut -d'"' -f4)
-      curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb" -o /tmp/delta.deb
+      DELTA_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "amd64")
+      curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_${DELTA_ARCH}.deb" -o /tmp/delta.deb
       sudo dpkg -i /tmp/delta.deb
       rm /tmp/delta.deb
       ;;
