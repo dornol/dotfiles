@@ -50,14 +50,22 @@ if ! command -v nvim &>/dev/null; then
   case "$OS" in
     Linux)
       NVIM_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x86_64")
-      curl -sL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.appimage" -o /tmp/nvim.appimage
-      chmod +x /tmp/nvim.appimage
-      cd /tmp && ./nvim.appimage --appimage-extract >/dev/null 2>&1
-      sudo rm -rf /opt/nvim-appimage
-      sudo mv /tmp/squashfs-root /opt/nvim-appimage
-      sudo ln -sf /opt/nvim-appimage/usr/bin/nvim /usr/local/bin/nvim
-      rm -f /tmp/nvim.appimage
-      cd - >/dev/null
+      # GLIBC 2.29 미만이면 소스 빌드 (Oracle Linux 8 등)
+      GLIBC_VER=$(ldd --version 2>&1 | awk 'NR==1{print $NF}')
+      GLIBC_MINOR=$(echo "$GLIBC_VER" | cut -d. -f2)
+      if [ "${GLIBC_MINOR:-0}" -lt 29 ] 2>/dev/null; then
+        echo "GLIBC $GLIBC_VER 감지 — 소스에서 nvim 빌드 중... (시간이 걸릴 수 있음)"
+        pkg_install cmake gcc make unzip gettext curl git
+        NVIM_TMP=$(mktemp -d)
+        git clone --depth=1 --branch stable https://github.com/neovim/neovim.git "$NVIM_TMP"
+        cmake -S "$NVIM_TMP" -B "$NVIM_TMP/build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+        cmake --build "$NVIM_TMP/build" -j"$(nproc)" --target install
+        sudo cmake --install "$NVIM_TMP/build"
+        rm -rf "$NVIM_TMP"
+      else
+        curl -sL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" | sudo tar -xz -C /opt
+        sudo ln -sf "/opt/nvim-linux-${NVIM_ARCH}/bin/nvim" /usr/local/bin/nvim
+      fi
       ;;
     Darwin)
       brew install neovim
