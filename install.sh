@@ -60,6 +60,28 @@ if ! command -v starship &>/dev/null; then
   curl -sS https://starship.rs/install.sh | sh -s -- --yes
 fi
 
+# fzf 설치
+if ! command -v fzf &>/dev/null; then
+  echo "fzf 설치 중..."
+  pkg_install fzf
+fi
+
+# delta 설치
+if ! command -v delta &>/dev/null; then
+  echo "delta 설치 중..."
+  case "$OS" in
+    Linux)
+      DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep tag_name | cut -d'"' -f4)
+      curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/git-delta_${DELTA_VERSION}_amd64.deb" -o /tmp/delta.deb
+      sudo dpkg -i /tmp/delta.deb
+      rm /tmp/delta.deb
+      ;;
+    Darwin)
+      brew install git-delta
+      ;;
+  esac
+fi
+
 # 기본 셸을 zsh로 변경
 if [ "$SHELL" != "$(which zsh)" ]; then
   echo "기본 셸을 zsh로 변경 중..."

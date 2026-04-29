@@ -49,6 +49,11 @@ alias dcd='docker compose down'
 alias dcl='docker compose logs -f'
 alias dcr='docker compose restart'
 
+# fzf
+if command -v fzf &>/dev/null; then
+  source <(fzf --zsh)
+fi
+
 # 플러그인
 ZSH_PLUGIN_DIR="$HOME/.zsh/plugins"
 source "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
