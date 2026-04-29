@@ -10,6 +10,10 @@ format = "[$hostname]($style):"
 truncation_length = 3
 truncate_to_repo = false
 
+[golang]
+detect_files = ["go.mod"]
+detect_folders = []
+
 [docker_context]
 format = " [$context]($style)"
 only_with_files = false
