@@ -31,6 +31,24 @@ alias la='ls -A'
 alias l='ls -CF'
 alias grep='grep --color=auto'
 
+# docker alias
+alias d='docker'
+alias dps='docker ps'
+alias dpsa='docker ps -a'
+alias di='docker images'
+alias dex='docker exec -it'
+alias dlogs='docker logs -f'
+alias drm='docker rm'
+alias drmi='docker rmi'
+alias dstop='docker stop'
+
+# docker compose alias
+alias dc='docker compose'
+alias dcu='docker compose up -d'
+alias dcd='docker compose down'
+alias dcl='docker compose logs -f'
+alias dcr='docker compose restart'
+
 # 플러그인
 ZSH_PLUGIN_DIR="$HOME/.zsh/plugins"
 source "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
