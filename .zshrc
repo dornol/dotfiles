@@ -61,3 +61,6 @@ source "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # starship 프롬프트
 eval "$(starship init zsh)"
+
+# 로컬 전용 설정 (git에 올라가지 않음)
+[ -f ~/.zshrc.local ] && source ~/.zshrc.local

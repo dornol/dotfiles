@@ -1,0 +1,20 @@
+{
+  "language": "korean",
+  "theme": "light",
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "autoUpdatesChannel": "latest",
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/notify.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
