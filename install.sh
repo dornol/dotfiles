@@ -126,7 +126,7 @@ fi
 # pipx + Python 도구 설치
 if ! command -v pipx &>/dev/null; then
   echo "pipx 설치 중..."
-  pkg_install pipx
+  pkg_install pipx 2>/dev/null || pip3 install --user pipx 2>/dev/null || true
 fi
 
 for tool in ruff; do
