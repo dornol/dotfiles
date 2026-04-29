@@ -50,8 +50,14 @@ if ! command -v nvim &>/dev/null; then
   case "$OS" in
     Linux)
       NVIM_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x86_64")
-      curl -sL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" | sudo tar -xz -C /opt
-      sudo ln -sf "/opt/nvim-linux-${NVIM_ARCH}/bin/nvim" /usr/local/bin/nvim
+      curl -sL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.appimage" -o /tmp/nvim.appimage
+      chmod +x /tmp/nvim.appimage
+      cd /tmp && ./nvim.appimage --appimage-extract >/dev/null 2>&1
+      sudo rm -rf /opt/nvim-appimage
+      sudo mv /tmp/squashfs-root /opt/nvim-appimage
+      sudo ln -sf /opt/nvim-appimage/usr/bin/nvim /usr/local/bin/nvim
+      rm -f /tmp/nvim.appimage
+      cd - >/dev/null
       ;;
     Darwin)
       brew install neovim
