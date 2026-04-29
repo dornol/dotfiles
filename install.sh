@@ -6,15 +6,11 @@ OS="$(uname -s)"
 
 mkdir -p "$HOME/.local/bin"
 
-# 의존성 확인
-deps_ok=true
-for cmd in git nvim; do
-  if ! command -v "$cmd" &>/dev/null; then
-    echo "필요한 프로그램이 없습니다: $cmd"
-    deps_ok=false
-  fi
-done
-[ "$deps_ok" = false ] && exit 1
+# git 확인 (필수)
+if ! command -v git &>/dev/null; then
+  echo "필요한 프로그램이 없습니다: git"
+  exit 1
+fi
 
 # 패키지 매니저로 설치
 pkg_install() {
@@ -34,6 +30,19 @@ fi
 if ! command -v stow &>/dev/null; then
   echo "stow 설치 중..."
   pkg_install stow
+fi
+
+# nvim 설치
+if ! command -v nvim &>/dev/null; then
+  echo "nvim 설치 중..."
+  case "$OS" in
+    Linux)
+      sudo snap install nvim --classic 2>/dev/null || pkg_install neovim
+      ;;
+    Darwin)
+      brew install neovim
+      ;;
+  esac
 fi
 
 # zsh 설치
