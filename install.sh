@@ -45,34 +45,27 @@ if ! command -v stow &>/dev/null; then
 fi
 
 # nvim 설치 (GitHub에서 최신 버전)
-if ! command -v nvim &>/dev/null; then
+NVIM_INSTALLED=false
+if command -v nvim &>/dev/null; then
+  NVIM_INSTALLED=true
+else
   echo "nvim 설치 중..."
   case "$OS" in
     Linux)
       NVIM_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x86_64")
-      # GLIBC 2.29 미만이면 소스 빌드 (Oracle Linux 8 등)
       GLIBC_VER=$(ldd --version 2>&1 | awk 'NR==1{print $NF}')
       GLIBC_MINOR=$(echo "$GLIBC_VER" | cut -d. -f2)
       if [ "${GLIBC_MINOR:-0}" -lt 29 ] 2>/dev/null; then
-        echo "GLIBC $GLIBC_VER 감지 — 소스에서 nvim 빌드 중... (시간이 걸릴 수 있음)"
-        pkg_install cmake gcc make unzip gettext curl git
-        NVIM_TMP=$(mktemp -d)
-        git clone --depth=1 --branch stable https://github.com/neovim/neovim.git "$NVIM_TMP"
-        cmake -S "$NVIM_TMP" -B "$NVIM_TMP/build" \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_INSTALL_PREFIX=/usr/local \
-          -DLUAJIT_USE_BUNDLED=ON \
-          -DUSE_BUNDLED=ON
-        cmake --build "$NVIM_TMP/build" -j"$(nproc)"
-        sudo cmake --install "$NVIM_TMP/build"
-        rm -rf "$NVIM_TMP"
+        echo "GLIBC $GLIBC_VER — nvim 최신 버전 미지원, 건너뜀"
       else
         curl -sL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" | sudo tar -xz -C /opt
         sudo ln -sf "/opt/nvim-linux-${NVIM_ARCH}/bin/nvim" /usr/local/bin/nvim
+        NVIM_INSTALLED=true
       fi
       ;;
     Darwin)
       brew install neovim
+      NVIM_INSTALLED=true
       ;;
   esac
 fi
@@ -205,3 +198,6 @@ echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
 stow --dir="$DOTFILES_DIR" --target="$HOME" --restow .
 
 echo "완료! 터미널 재시작하면 zsh로 전환돼."
+if [ "$NVIM_INSTALLED" = false ]; then
+  echo "주의: nvim은 이 시스템(GLIBC 구버전)에서 지원되지 않아 건너뜀."
+fi
