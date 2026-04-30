@@ -1,4 +1,11 @@
 return {
+  {
+    "lambdalisue/suda.vim",
+    cmd = { "SudaRead", "SudaWrite" },
+    init = function()
+      vim.cmd([[cnoreabbrev w!! SudaWrite]])
+    end,
+  },
   -- YAML 스키마 자동 감지 (k8s, GitHub Actions, docker-compose 등)
   {
     "b0o/SchemaStore.nvim",

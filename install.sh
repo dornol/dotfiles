@@ -156,6 +156,7 @@ if ! command -v fnm &>/dev/null; then
   echo "fnm 설치 중..."
   pkg_install unzip
   curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir ~/.local/bin --skip-shell
+  export PATH="$HOME/.local/bin:$PATH"
 fi
 
 if command -v fnm &>/dev/null && ! fnm list | grep -q lts; then
