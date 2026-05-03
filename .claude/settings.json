@@ -1,15 +1,9 @@
 {
-  "language": "korean",
-  "theme": "light",
-  "tui": "fullscreen",
-  "skipDangerousModePermissionPrompt": true,
-  "autoUpdatesChannel": "latest",
-  "effortLevel": "medium",
-  "includeGitInstructions": false,
   "attribution": {
     "commit": "",
     "pr": ""
   },
+  "includeGitInstructions": false,
   "hooks": {
     "Notification": [
       {
@@ -22,5 +16,12 @@
         ]
       }
     ]
-  }
+  },
+  "language": "korean",
+  "effortLevel": "medium",
+  "autoUpdatesChannel": "latest",
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "light",
+  "model": "opus[1m]"
 }
