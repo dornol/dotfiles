@@ -4,6 +4,11 @@ return {
     opts = {
       completion = {
         ghost_text = { enabled = false },
+        menu = {
+          auto_show = function(ctx)
+            return not vim.tbl_contains({ "yaml", "json" }, vim.bo[ctx.bufnr].filetype)
+          end,
+        },
       },
       -- 스니펫 소스 제거 (멀티라인 자동완성 방지)
       sources = {
