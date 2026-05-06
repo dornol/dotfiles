@@ -35,6 +35,19 @@ Windows:
 powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/uninstall.ps1)"
 ```
 
+## 자동 동기화
+
+새 zsh 셸을 열 때마다 마지막 pull로부터 24시간 이상 지났으면 백그라운드로
+`git pull` + `stow --restow`를 자동 실행. 로컬에 커밋되지 않은 변경이 있으면
+충돌 방지를 위해 스킵. 즉시 받고 싶으면:
+
+```bash
+dotfiles-update
+```
+
+dotfiles 디렉토리는 `.zshrc` 심볼릭 링크를 따라 자동 감지되므로
+설치 경로가 `~/dotfiles`가 아니어도 동작.
+
 ## 민감한 환경변수
 
 `~/.zshrc.local` 파일에 추가 (git 제외):
