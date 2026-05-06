@@ -20,6 +20,21 @@ powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/install.ps
 
 `.gitconfig`, `.claude/settings.json`, `.claude/hooks/notify.sh` 적용됨 (MCP 설정은 유지)
 
+## Uninstall
+
+Linux / macOS / WSL:
+
+```bash
+bash ~/dotfiles/uninstall.sh           # 링크 해제 + 백업 복원
+bash ~/dotfiles/uninstall.sh --purge   # 추가로 설치한 도구 제거
+```
+
+Windows:
+
+```bash
+powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/uninstall.ps1)"
+```
+
 ## 민감한 환경변수
 
 `~/.zshrc.local` 파일에 추가 (git 제외):
