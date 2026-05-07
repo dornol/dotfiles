@@ -27,6 +27,36 @@ map("i", ".", ".<C-g>u")
 map("i", "!", "!<C-g>u")
 map("i", "?", "?<C-g>u")
 
+-- 복사 모드 토글: 좌측 chrome 다 끄기 (그냥 드래그로 깔끔 복사용)
+local copy_mode = false
+local saved_statuscolumn = nil
+local saved_mouse = nil
+map("n", "<leader>uc", function()
+  copy_mode = not copy_mode
+  if copy_mode then
+    saved_statuscolumn = vim.opt.statuscolumn:get()
+    saved_mouse = vim.opt.mouse:get()
+    vim.opt.number = false
+    vim.opt.relativenumber = false
+    vim.opt.signcolumn = "no"
+    vim.opt.foldcolumn = "0"
+    vim.opt.statuscolumn = ""
+    vim.opt.colorcolumn = ""
+    vim.opt.mouse = ""
+    pcall(function() Snacks.indent.disable() end)
+  else
+    vim.opt.number = true
+    vim.opt.relativenumber = true
+    vim.opt.signcolumn = "yes"
+    vim.opt.foldcolumn = "1"
+    vim.opt.statuscolumn = saved_statuscolumn or ""
+    vim.opt.colorcolumn = "120"
+    vim.opt.mouse = saved_mouse or "a"
+    pcall(function() Snacks.indent.enable() end)
+  end
+  vim.notify("Copy mode: " .. (copy_mode and "ON" or "OFF"))
+end, { desc = "Toggle copy mode" })
+
 -- Harpoon
 local ok, harpoon = pcall(require, "harpoon")
 if ok then
