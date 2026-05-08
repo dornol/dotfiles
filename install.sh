@@ -44,6 +44,25 @@ if ! command -v stow &>/dev/null; then
   pkg_install stow
 fi
 
+# C 컴파일러 설치 (treesitter 파서 빌드용)
+if ! command -v cc &>/dev/null && ! command -v gcc &>/dev/null; then
+  echo "C 컴파일러 설치 중..."
+  case "$OS" in
+    Linux)
+      if command -v apt-get &>/dev/null; then
+        sudo apt-get install -y build-essential
+      elif command -v dnf &>/dev/null; then
+        sudo dnf groupinstall -y "Development Tools"
+      elif command -v yum &>/dev/null; then
+        sudo yum groupinstall -y "Development Tools"
+      fi
+      ;;
+    Darwin)
+      xcode-select -p &>/dev/null || xcode-select --install
+      ;;
+  esac
+fi
+
 # nvim 설치 (GitHub에서 최신 버전)
 NVIM_INSTALLED=false
 if command -v nvim &>/dev/null; then
