@@ -22,6 +22,5 @@
   "autoUpdatesChannel": "latest",
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
-  "theme": "light",
-  "model": "opus[1m]"
+  "theme": "light"
 }

@@ -1,6 +1,6 @@
 [user]
 	name = DongHyeok Kim
-	email = dhkim@bookswage.com
+	email = ucceoum@gmail.com
 
 [core]
 	fileMode = false
@@ -31,3 +31,6 @@
 
 [init]
 	defaultBranch = main
+
+[include]
+	path = ~/.gitconfig.local
