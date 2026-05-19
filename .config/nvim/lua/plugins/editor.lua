@@ -1,5 +1,11 @@
 return {
   {
+    "folke/snacks.nvim",
+    opts = {
+      indent = { enabled = false },
+    },
+  },
+  {
     "nvim-treesitter/nvim-treesitter",
     opts = {
       indent = {
