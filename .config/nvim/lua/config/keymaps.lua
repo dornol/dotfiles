@@ -45,10 +45,10 @@ map("n", "<leader>uc", function()
     vim.opt.mouse = ""
     pcall(function() Snacks.indent.disable() end)
   else
-    vim.opt.number = true
-    vim.opt.relativenumber = true
-    vim.opt.signcolumn = "yes"
-    vim.opt.foldcolumn = "1"
+    vim.opt.number = false
+    vim.opt.relativenumber = false
+    vim.opt.signcolumn = "no"
+    vim.opt.foldcolumn = "0"
     vim.opt.statuscolumn = saved_statuscolumn or ""
     vim.opt.colorcolumn = "120"
     vim.opt.mouse = saved_mouse or "a"
