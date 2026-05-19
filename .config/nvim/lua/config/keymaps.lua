@@ -27,6 +27,21 @@ map("i", ".", ".<C-g>u")
 map("i", "!", "!<C-g>u")
 map("i", "?", "?<C-g>u")
 
+-- 라인넘버 토글 (signcolumn, foldcolumn 같이 처리)
+map("n", "<leader>ul", function()
+  if vim.opt.number:get() then
+    vim.opt.number = false
+    vim.opt.relativenumber = false
+    vim.opt.signcolumn = "no"
+    vim.opt.foldcolumn = "0"
+  else
+    vim.opt.number = true
+    vim.opt.relativenumber = true
+    vim.opt.signcolumn = "yes"
+    vim.opt.foldcolumn = "1"
+  end
+end, { desc = "Toggle line numbers" })
+
 -- 마우스 토글
 map("n", "<M-m>", function()
   if vim.opt.mouse:get()["a"] then

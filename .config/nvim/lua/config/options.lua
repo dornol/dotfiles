@@ -10,6 +10,7 @@ opt.shiftwidth = 2
 opt.tabstop = 2
 opt.colorcolumn = ""
 opt.mouse = ""
+opt.showcmd = false
 opt.wrap = false
 opt.clipboard = "unnamedplus"
 
