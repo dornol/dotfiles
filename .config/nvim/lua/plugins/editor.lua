@@ -1,5 +1,14 @@
 return {
   {
+    "nvim-treesitter/nvim-treesitter",
+    opts = {
+      indent = {
+        -- YAML treesitter indent가 LSP indent와 충돌해서 불안정함
+        disable = { "yaml" },
+      },
+    },
+  },
+  {
     "lambdalisue/suda.vim",
     cmd = { "SudaRead", "SudaWrite" },
     init = function()

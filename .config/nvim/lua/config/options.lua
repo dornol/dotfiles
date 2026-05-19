@@ -8,7 +8,7 @@ opt.scrolloff = 8
 opt.expandtab = true
 opt.shiftwidth = 2
 opt.tabstop = 2
-opt.colorcolumn = "120"
+opt.colorcolumn = ""
 opt.wrap = false
 opt.clipboard = "unnamedplus"
 
