@@ -27,6 +27,8 @@ bindkey "^[[4~" end-of-line         # End  (rxvt/일부 리눅스)
 bindkey "^[OH"  beginning-of-line   # Home (tmux/screen)
 bindkey "^[OF"  end-of-line         # End  (tmux/screen)
 bindkey "^[[3~" delete-char         # Delete
+bindkey "^[[1;5C" forward-word      # Ctrl+Right
+bindkey "^[[1;5D" backward-word     # Ctrl+Left
 
 # 자동완성
 autoload -Uz compinit && compinit
