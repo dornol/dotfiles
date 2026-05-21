@@ -155,6 +155,23 @@ if ! command -v delta &>/dev/null; then
   esac
 fi
 
+# ripgrep 설치
+if ! command -v rg &>/dev/null; then
+  echo "ripgrep 설치 중..."
+  case "$OS" in
+    Linux)
+      RG_VERSION=$(curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | grep tag_name | cut -d'"' -f4)
+      RG_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
+      curl -sL "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
+      mv "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl/rg" "$HOME/.local/bin/rg"
+      rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl"
+      ;;
+    Darwin)
+      brew install ripgrep
+      ;;
+  esac
+fi
+
 # pipx + Python 도구 설치
 if ! command -v pipx &>/dev/null; then
   echo "pipx 설치 중..."
