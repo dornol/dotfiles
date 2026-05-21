@@ -24,6 +24,9 @@ setopt HIST_IGNORE_SPACE
 setopt SHARE_HISTORY
 
 # 키 바인딩
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^X^E' edit-command-line    # Ctrl+X Ctrl+E → 현재 명령어를 nvim에서 편집
 bindkey "^[[H"  beginning-of-line   # Home
 bindkey "^[[F"  end-of-line         # End
 bindkey "^[[1~" beginning-of-line   # Home (rxvt/일부 리눅스)
