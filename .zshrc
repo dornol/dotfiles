@@ -19,6 +19,15 @@ setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_SPACE
 setopt SHARE_HISTORY
 
+# 키 바인딩
+bindkey "^[[H"  beginning-of-line   # Home
+bindkey "^[[F"  end-of-line         # End
+bindkey "^[[1~" beginning-of-line   # Home (rxvt/일부 리눅스)
+bindkey "^[[4~" end-of-line         # End  (rxvt/일부 리눅스)
+bindkey "^[OH"  beginning-of-line   # Home (tmux/screen)
+bindkey "^[OF"  end-of-line         # End  (tmux/screen)
+bindkey "^[[3~" delete-char         # Delete
+
 # 자동완성
 autoload -Uz compinit && compinit
 zstyle ':completion:*' menu select
