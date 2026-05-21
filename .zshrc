@@ -1,6 +1,10 @@
 # PATH
 export PATH="$HOME/.local/bin:$PATH"
 
+# 기본 에디터
+export EDITOR=nvim
+export VISUAL=nvim
+
 case "$(uname -s)" in
   Linux)
     export PATH="$PATH:/opt/nvim-linux-x86_64/bin"
