@@ -20,6 +20,25 @@ powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/install.ps
 
 `.gitconfig`, `.claude/settings.json`, `.claude/hooks/notify.sh` 적용됨 (MCP 설정은 유지)
 
+### Windows Terminal 테마 · 폰트
+
+WSL 터미널에서 실행:
+
+```bash
+bash ~/dotfiles/install.windows-terminal.sh
+```
+
+- 테마: GitHub Light
+- 폰트: JetBrains Mono Nerd Font (Regular)
+- 기본 프로파일에 자동 적용
+
+옵션:
+
+```bash
+bash ~/dotfiles/install.windows-terminal.sh -ThemesOnly  # 테마만
+bash ~/dotfiles/install.windows-terminal.sh -FontsOnly   # 폰트만
+```
+
 ## Uninstall
 
 Linux / macOS / WSL:
