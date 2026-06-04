@@ -289,14 +289,7 @@ backup_if_exists "$HOME/.claude/settings.json"
 backup_if_exists "$HOME/.claude/hooks/notify.sh"
 
 echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
-stow --dir="$DOTFILES_DIR" --target="$HOME" --restow \
-  --ignore='README.*' \
-  --ignore='install\.sh' \
-  --ignore='install\.ps1' \
-  --ignore='uninstall\.sh' \
-  --ignore='uninstall\.ps1' \
-  --ignore='scripts' \
-  .
+stow --dir="$DOTFILES_DIR" --target="$HOME" --restow --ignore='scripts' .
 
 echo "완료! 터미널 재시작하면 zsh로 전환돼."
 if [ "$NVIM_INSTALLED" = false ]; then
