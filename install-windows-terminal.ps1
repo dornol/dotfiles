@@ -1,6 +1,4 @@
 # Windows Terminal 테마 및 폰트 설치
-[Console]::OutputEncoding = [Console]::InputEncoding = [Text.Encoding]::UTF8
-
 param(
   [switch]$FontsOnly,
   [switch]$ThemesOnly
