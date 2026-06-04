@@ -295,3 +295,12 @@ echo "완료! 터미널 재시작하면 zsh로 전환돼."
 if [ "$NVIM_INSTALLED" = false ]; then
   echo "주의: nvim은 이 시스템(GLIBC 구버전)에서 지원되지 않아 건너뜀."
 fi
+
+# WSL이면 Windows Terminal 테마/폰트 자동 설치
+if [[ -n "$WSL_DISTRO_NAME" ]] || grep -qi microsoft /proc/version 2>/dev/null; then
+  if command -v powershell.exe &>/dev/null; then
+    echo "Windows Terminal 설정 중..."
+    PS1_WIN="$(wslpath -w "$DOTFILES_DIR/install.windows-terminal.ps1")"
+    powershell.exe -ExecutionPolicy Bypass -File "$PS1_WIN"
+  fi
+fi
