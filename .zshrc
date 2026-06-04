@@ -136,5 +136,10 @@ if [ -d "$__DOTFILES_DIR/.git" ]; then
   unset __now __last
 fi
 
+# 터미널 리사이즈 시 prompt 강제 재갱신 (줄바꿈 깨짐 방지)
+TRAPWINCH() {
+  zle && zle reset-prompt
+}
+
 # 로컬 전용 설정 (git에 올라가지 않음)
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
