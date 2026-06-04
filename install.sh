@@ -144,10 +144,17 @@ if ! command -v delta &>/dev/null; then
     Linux)
       DELTA_VERSION=$(curl -s https://api.github.com/repos/dandavison/delta/releases/latest | grep tag_name | cut -d'"' -f4)
       DELTA_VER="${DELTA_VERSION#v}"
-      DELTA_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-      curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VER}-${DELTA_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
-      mv "/tmp/delta-${DELTA_VER}-${DELTA_ARCH}-unknown-linux-musl/delta" "$HOME/.local/bin/delta"
-      rm -rf "/tmp/delta-${DELTA_VER}-${DELTA_ARCH}-unknown-linux-musl"
+      if [ "$ARCH" = "aarch64" ]; then
+        DELTA_ARCH="aarch64"
+        DELTA_LIBC="gnu"
+      else
+        DELTA_ARCH="x86_64"
+        DELTA_LIBC="musl"
+      fi
+      DELTA_TRIPLE="${DELTA_ARCH}-unknown-linux-${DELTA_LIBC}"
+      curl -sL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VER}-${DELTA_TRIPLE}.tar.gz" | tar -xz -C /tmp
+      mv "/tmp/delta-${DELTA_VER}-${DELTA_TRIPLE}/delta" "$HOME/.local/bin/delta"
+      rm -rf "/tmp/delta-${DELTA_VER}-${DELTA_TRIPLE}"
       ;;
     Darwin)
       brew install git-delta
@@ -161,10 +168,17 @@ if ! command -v rg &>/dev/null; then
   case "$OS" in
     Linux)
       RG_VERSION=$(curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | grep tag_name | cut -d'"' -f4)
-      RG_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-      curl -sL "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
-      mv "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl/rg" "$HOME/.local/bin/rg"
-      rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_ARCH}-unknown-linux-musl"
+      if [ "$ARCH" = "aarch64" ]; then
+        RG_ARCH="aarch64"
+        RG_LIBC="gnu"
+      else
+        RG_ARCH="x86_64"
+        RG_LIBC="musl"
+      fi
+      RG_TRIPLE="${RG_ARCH}-unknown-linux-${RG_LIBC}"
+      curl -sL "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_TRIPLE}.tar.gz" | tar -xz -C /tmp
+      mv "/tmp/ripgrep-${RG_VERSION}-${RG_TRIPLE}/rg" "$HOME/.local/bin/rg"
+      rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_TRIPLE}"
       ;;
     Darwin)
       brew install ripgrep
@@ -178,8 +192,8 @@ if ! command -v eza &>/dev/null; then
   case "$OS" in
     Linux)
       EZA_VERSION=$(curl -s https://api.github.com/repos/eza-community/eza/releases/latest | grep tag_name | cut -d'"' -f4)
-      EZA_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-      curl -sL "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${EZA_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
+      EZA_LIBC=$([ "$ARCH" = "aarch64" ] && echo "gnu" || echo "musl")
+      curl -sL "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${ARCH}-unknown-linux-${EZA_LIBC}.tar.gz" | tar -xz -C /tmp
       mv "/tmp/eza" "$HOME/.local/bin/eza"
       ;;
     Darwin)
