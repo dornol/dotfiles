@@ -43,14 +43,25 @@ zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 
 # alias
-alias ls='ls --color=auto'
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
+if command -v eza &>/dev/null; then
+  alias ls='eza'
+  alias ll='eza -alF --git'
+  alias la='eza -a'
+  alias l='eza -F'
+  alias lt='eza --tree'
+else
+  alias ls='ls --color=auto'
+  alias ll='ls -alF'
+  alias la='ls -A'
+  alias l='ls -CF'
+fi
 alias grep='grep --color=auto'
 if command -v nvim &>/dev/null; then
   alias vi='nvim'
   alias vim='nvim'
+fi
+if command -v lazygit &>/dev/null; then
+  alias lg='lazygit'
 fi
 
 # docker alias
@@ -134,6 +145,11 @@ if [ -d "$__DOTFILES_DIR/.git" ]; then
     } &!
   fi
   unset __now __last
+fi
+
+# zoxide (스마트 cd)
+if command -v zoxide &>/dev/null; then
+  eval "$(zoxide init zsh)"
 fi
 
 # 터미널 리사이즈 시 prompt 강제 재갱신 (줄바꿈 깨짐 방지)

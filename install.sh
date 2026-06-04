@@ -172,6 +172,56 @@ if ! command -v rg &>/dev/null; then
   esac
 fi
 
+# eza 설치
+if ! command -v eza &>/dev/null; then
+  echo "eza 설치 중..."
+  case "$OS" in
+    Linux)
+      EZA_VERSION=$(curl -s https://api.github.com/repos/eza-community/eza/releases/latest | grep tag_name | cut -d'"' -f4)
+      EZA_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
+      curl -sL "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${EZA_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
+      mv "/tmp/eza" "$HOME/.local/bin/eza"
+      ;;
+    Darwin)
+      brew install eza
+      ;;
+  esac
+fi
+
+# zoxide 설치
+if ! command -v zoxide &>/dev/null; then
+  echo "zoxide 설치 중..."
+  case "$OS" in
+    Linux)
+      ZOXIDE_VERSION=$(curl -s https://api.github.com/repos/ajeetdsouza/zoxide/releases/latest | grep tag_name | cut -d'"' -f4)
+      ZOXIDE_VER="${ZOXIDE_VERSION#v}"
+      ZOXIDE_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
+      curl -sL "https://github.com/ajeetdsouza/zoxide/releases/download/${ZOXIDE_VERSION}/zoxide-${ZOXIDE_VER}-${ZOXIDE_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
+      mv "/tmp/zoxide" "$HOME/.local/bin/zoxide"
+      ;;
+    Darwin)
+      brew install zoxide
+      ;;
+  esac
+fi
+
+# lazygit 설치
+if ! command -v lazygit &>/dev/null; then
+  echo "lazygit 설치 중..."
+  case "$OS" in
+    Linux)
+      LG_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep tag_name | cut -d'"' -f4)
+      LG_VER="${LG_VERSION#v}"
+      LG_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x86_64")
+      curl -sL "https://github.com/jesseduffield/lazygit/releases/download/${LG_VERSION}/lazygit_${LG_VER}_Linux_${LG_ARCH}.tar.gz" | tar -xz -C /tmp
+      mv "/tmp/lazygit" "$HOME/.local/bin/lazygit"
+      ;;
+    Darwin)
+      brew install lazygit
+      ;;
+  esac
+fi
+
 # pipx + Python 도구 설치
 if ! command -v pipx &>/dev/null; then
   echo "pipx 설치 중..."
