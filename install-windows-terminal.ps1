@@ -19,12 +19,17 @@ function Get-LatestTag($repo) {
     -Headers @{'User-Agent' = 'dotfiles'} -UseBasicParsing).tag_name
 }
 
+function Test-FontInstalled($fileName) {
+  (Test-Path "$env:SystemRoot\Fonts\$fileName") -or
+  (Test-Path "$env:LOCALAPPDATA\Microsoft\Windows\Fonts\$fileName")
+}
+
 function Install-FontFile($path) {
   $shell = New-Object -ComObject Shell.Application
   $shell.Namespace(0x14).CopyHere($path, 0x14)
 }
 
-function Install-FontsFromZip($url, $label) {
+function Install-FontsFromZip($url, $label, $exactName) {
   Write-Host "  $label 다운로드 중..."
   $zip = [IO.Path]::GetTempFileName() + '.zip'
   $dir = [IO.Path]::Combine([IO.Path]::GetTempPath(), [IO.Path]::GetRandomFileName())
@@ -32,9 +37,9 @@ function Install-FontsFromZip($url, $label) {
     Invoke-WebRequest $url -OutFile $zip -UseBasicParsing
     Expand-Archive $zip $dir -Force
     $fonts = Get-ChildItem $dir -Recurse -Include '*.ttf', '*.otf' |
-             Where-Object { $_.Name -match 'Regular' -and $_.Name -notmatch 'WindowsCompatible|Windows Compatible' }
+             Where-Object { $_.Name -eq $exactName }
     $fonts | ForEach-Object { Install-FontFile $_.FullName }
-    Write-Host "  $label 완료 ($($fonts.Count)개 파일)"
+    Write-Host "  $label 완료"
   }
   finally {
     Remove-Item $zip -Force -ErrorAction SilentlyContinue
@@ -98,10 +103,17 @@ if (-not $FontsOnly) {
 # ── 폰트 설치 ────────────────────────────────────────────────────────────
 if (-not $ThemesOnly) {
   Write-Host "`n폰트 설치 중..."
-  $nfTag = Get-LatestTag 'ryanoasis/nerd-fonts'
-  Install-FontsFromZip `
-    "https://github.com/ryanoasis/nerd-fonts/releases/download/$nfTag/JetBrainsMono.zip" `
-    'JetBrains Mono Nerd Font'
+  $fontFile = 'JetBrainsMonoNerdFont-Regular.ttf'
+  if (Test-FontInstalled $fontFile) {
+    Write-Host "  JetBrains Mono Nerd Font 이미 설치됨, 스킵"
+  }
+  else {
+    $nfTag = Get-LatestTag 'ryanoasis/nerd-fonts'
+    Install-FontsFromZip `
+      "https://github.com/ryanoasis/nerd-fonts/releases/download/$nfTag/JetBrainsMono.zip" `
+      'JetBrains Mono Nerd Font' `
+      $fontFile
+  }
   Write-Host "폰트 완료"
 }
 
