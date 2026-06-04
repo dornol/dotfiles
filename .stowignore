@@ -3,5 +3,4 @@ install\.sh
 install\.ps1
 uninstall\.sh
 uninstall\.ps1
-install-windows-terminal\.ps1
-install-windows-terminal\.sh
+scripts

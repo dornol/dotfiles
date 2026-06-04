@@ -295,7 +295,7 @@ stow --dir="$DOTFILES_DIR" --target="$HOME" --restow \
   --ignore='install\.ps1' \
   --ignore='uninstall\.sh' \
   --ignore='uninstall\.ps1' \
-  --ignore='install-windows-terminal\..*' \
+  --ignore='scripts' \
   .
 
 echo "완료! 터미널 재시작하면 zsh로 전환돼."
