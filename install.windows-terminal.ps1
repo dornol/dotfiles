@@ -47,6 +47,23 @@ function Install-FontsFromZip($url, $label, $exactName) {
   }
 }
 
+# -- Font -------------------------------------------------------------------
+if (-not $ThemesOnly) {
+  Write-Host "Installing font..."
+  $fontFile = 'JetBrainsMonoNerdFont-Regular.ttf'
+  if (Test-FontInstalled $fontFile) {
+    Write-Host "  JetBrains Mono Nerd Font already installed, skipping"
+  }
+  else {
+    $nfTag = Get-LatestTag 'ryanoasis/nerd-fonts'
+    Install-FontsFromZip `
+      "https://github.com/ryanoasis/nerd-fonts/releases/download/$nfTag/JetBrainsMono.zip" `
+      'JetBrains Mono Nerd Font' `
+      $fontFile
+  }
+  Write-Host "Font done`n"
+}
+
 # -- Theme ------------------------------------------------------------------
 if (-not $FontsOnly) {
   $settings = Find-WTSettings
@@ -97,23 +114,6 @@ if (-not $FontsOnly) {
     $json | ConvertTo-Json -Depth 10 | Set-Content $settings -Encoding UTF8
     Write-Host "Theme done"
   }
-}
-
-# -- Font -------------------------------------------------------------------
-if (-not $ThemesOnly) {
-  Write-Host "`nInstalling font..."
-  $fontFile = 'JetBrainsMonoNerdFont-Regular.ttf'
-  if (Test-FontInstalled $fontFile) {
-    Write-Host "  JetBrains Mono Nerd Font already installed, skipping"
-  }
-  else {
-    $nfTag = Get-LatestTag 'ryanoasis/nerd-fonts'
-    Install-FontsFromZip `
-      "https://github.com/ryanoasis/nerd-fonts/releases/download/$nfTag/JetBrainsMono.zip" `
-      'JetBrains Mono Nerd Font' `
-      $fontFile
-  }
-  Write-Host "Font done"
 }
 
 Write-Host "`nDone! Restart Windows Terminal to apply."

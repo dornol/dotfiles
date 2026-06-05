@@ -21,3 +21,6 @@ only_with_files = false
 [kubernetes]
 disabled = false
 format = " [$symbol$context( \\($namespace\\))]($style)"
+
+[git_status]
+disabled = true

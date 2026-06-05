@@ -303,7 +303,9 @@ backup_if_exists "$HOME/.claude/settings.json"
 backup_if_exists "$HOME/.claude/hooks/notify.sh"
 
 echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
-stow --dir="$DOTFILES_DIR" --target="$HOME" --restow .
+stow_out=$(stow --dir="$DOTFILES_DIR" --target="$HOME" --restow . 2>&1); stow_exit=$?
+echo "$stow_out" | grep -v "^BUG in find_stowed_path"
+[ $stow_exit -ne 0 ] && exit $stow_exit
 
 echo "완료! 터미널 재시작하면 zsh로 전환돼."
 if [ "$NVIM_INSTALLED" = false ]; then
