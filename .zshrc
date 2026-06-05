@@ -154,6 +154,8 @@ fi
 
 # 터미널 리사이즈 시 prompt 강제 재갱신 (줄바꿈 깨짐 방지)
 TRAPWINCH() {
+  COLUMNS=$(tput cols)
+  LINES=$(tput lines)
   zle && zle reset-prompt
 }
 
