@@ -6,4 +6,5 @@ uninstall.sh
 uninstall.ps1
 install.windows-terminal.ps1
 install.windows-terminal.sh
+install.macos-terminal.sh
 .zshrc.local

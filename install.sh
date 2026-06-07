@@ -296,6 +296,7 @@ backup_if_exists() {
 }
 
 backup_if_exists "$HOME/.config/nvim"
+backup_if_exists "$HOME/.wezterm.lua"
 backup_if_exists "$HOME/.gitconfig"
 backup_if_exists "$HOME/.zshrc"
 backup_if_exists "$HOME/.tmux.conf"
@@ -319,4 +320,10 @@ if [[ -n "$WSL_DISTRO_NAME" ]] || grep -qi microsoft /proc/version 2>/dev/null; 
     PS1_WIN="$(wslpath -w "$DOTFILES_DIR/install.windows-terminal.ps1")"
     powershell.exe -ExecutionPolicy Bypass -File "$PS1_WIN"
   fi
+fi
+
+# macOS이면 Terminal/WezTerm 테마와 폰트 자동 설치
+if [ "$OS" = "Darwin" ]; then
+  echo "macOS Terminal/WezTerm 설정 중..."
+  bash "$DOTFILES_DIR/install.macos-terminal.sh"
 fi

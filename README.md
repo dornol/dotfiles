@@ -10,6 +10,20 @@ cd ~/dotfiles
 bash install.sh
 ```
 
+macOS에서는 다음 설정도 자동 적용됨.
+
+- macOS Terminal / WezTerm 테마: GitHub Light
+- 폰트: JetBrains Mono Nerd Font (Regular)
+- WezTerm이 없으면 Homebrew로 자동 설치
+- WezTerm 설정: `~/.wezterm.lua`
+
+macOS 터미널 설정만 개별 실행:
+
+```bash
+bash ~/dotfiles/install.macos-terminal.sh --themes-only  # 테마만
+bash ~/dotfiles/install.macos-terminal.sh --fonts-only   # 폰트만
+```
+
 ## Windows
 
 WSL 터미널에서 실행:
