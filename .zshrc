@@ -64,6 +64,11 @@ if command -v lazygit &>/dev/null; then
   alias lg='lazygit'
 fi
 
+t() {
+  local session="${1:-main}"
+  tmux new -A -s "$session"
+}
+
 # docker alias
 alias d='docker'
 alias dps='docker ps'
