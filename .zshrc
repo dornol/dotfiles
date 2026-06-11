@@ -56,9 +56,6 @@ else
   alias l='ls -CF'
 fi
 alias grep='grep --color=auto'
-if command -v bat &>/dev/null; then
-  alias cat='bat'
-fi
 if command -v nvim &>/dev/null; then
   alias vi='nvim'
   alias vim='nvim'
