@@ -86,7 +86,7 @@ if (-not $FontsOnly) {
     $scheme = [PSCustomObject]@{
       name                = 'GitHub Light'
       background          = '#FFFFFF'; foreground          = '#24292E'
-      cursorColor         = '#044289'; selectionBackground = '#0366D6'
+      cursorColor         = '#044289'; selectionBackground = '#000000'
       black               = '#24292E'; brightBlack         = '#959DA5'
       red                 = '#D73A49'; brightRed           = '#CB2431'
       green               = '#22863A'; brightGreen         = '#28A745'

@@ -11,7 +11,7 @@ config.colors = {
   cursor_bg = "#044289",
   cursor_fg = "#FFFFFF",
   cursor_border = "#044289",
-  selection_bg = "#0366D6",
+  selection_bg = "#000000",
   selection_fg = "#FFFFFF",
   ansi = {
     "#24292E",
