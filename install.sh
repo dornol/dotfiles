@@ -162,6 +162,42 @@ if ! command -v delta &>/dev/null; then
   esac
 fi
 
+# bat 설치
+if ! command -v bat &>/dev/null; then
+  echo "bat 설치 중..."
+  case "$OS" in
+    Linux)
+      BAT_VERSION=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | grep tag_name | cut -d'"' -f4)
+      BAT_VER="${BAT_VERSION#v}"
+      BAT_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
+      curl -sL "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
+      mv "/tmp/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl/bat" "$HOME/.local/bin/bat"
+      rm -rf "/tmp/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl"
+      ;;
+    Darwin)
+      brew install bat
+      ;;
+  esac
+fi
+
+# fd 설치
+if ! command -v fd &>/dev/null; then
+  echo "fd 설치 중..."
+  case "$OS" in
+    Linux)
+      FD_VERSION=$(curl -s https://api.github.com/repos/sharkdp/fd/releases/latest | grep tag_name | cut -d'"' -f4)
+      FD_VER="${FD_VERSION#v}"
+      FD_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
+      curl -sL "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
+      mv "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl/fd" "$HOME/.local/bin/fd"
+      rm -rf "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl"
+      ;;
+    Darwin)
+      brew install fd
+      ;;
+  esac
+fi
+
 # ripgrep 설치
 if ! command -v rg &>/dev/null; then
   echo "ripgrep 설치 중..."

@@ -56,6 +56,9 @@ else
   alias l='ls -CF'
 fi
 alias grep='grep --color=auto'
+if command -v bat &>/dev/null; then
+  alias cat='bat'
+fi
 if command -v nvim &>/dev/null; then
   alias vi='nvim'
   alias vim='nvim'
@@ -93,6 +96,13 @@ if command -v fnm &>/dev/null; then
 fi
 
 # fzf
+if command -v fd &>/dev/null; then
+  export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+fi
+if command -v bat &>/dev/null; then
+  export FZF_DEFAULT_OPTS="--preview 'bat --color=always --line-range :100 {}'"
+fi
 if command -v fzf &>/dev/null; then
   if fzf --zsh &>/dev/null; then
     source <(fzf --zsh)
