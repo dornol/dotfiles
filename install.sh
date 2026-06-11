@@ -272,6 +272,16 @@ if ! command -v lazygit &>/dev/null; then
   esac
 fi
 
+# TPM + tmux-resurrect 설치
+if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
+  echo "TPM 설치 중..."
+  git clone --depth=1 https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+fi
+if [ ! -d "$HOME/.tmux/plugins/tmux-resurrect" ]; then
+  echo "tmux-resurrect 설치 중..."
+  git clone --depth=1 https://github.com/tmux-plugins/tmux-resurrect "$HOME/.tmux/plugins/tmux-resurrect"
+fi
+
 # pipx + Python 도구 설치
 if ! command -v pipx &>/dev/null; then
   echo "pipx 설치 중..."
