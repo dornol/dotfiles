@@ -16,7 +16,8 @@ return {
       },
       -- 완성 수락 시 undo 브레이크포인트 추가
       keymap = {
-        ["<CR>"] = {
+        ["<CR>"] = { "fallback" },
+        ["<Tab>"] = {
           function(cmp)
             if cmp.is_visible() then
               vim.api.nvim_feedkeys(
