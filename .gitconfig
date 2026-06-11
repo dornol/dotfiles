@@ -21,9 +21,6 @@
 	line-numbers = true
 	side-by-side = true
 
-[diff]
-	colorMoved = default
-
 [pull]
 	rebase = false
 

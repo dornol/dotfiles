@@ -94,7 +94,7 @@ fi
 
 # fzf
 if command -v fzf &>/dev/null; then
-  if fzf --zsh &>/dev/null 2>&1; then
+  if fzf --zsh &>/dev/null; then
     source <(fzf --zsh)
   else
     # 구버전 fzf 호환
@@ -105,8 +105,8 @@ fi
 
 # 플러그인
 ZSH_PLUGIN_DIR="$HOME/.zsh/plugins"
-source "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
-source "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+[ -f "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && source "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+[ -f "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && source "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # starship 프롬프트
 eval "$(starship init zsh)"

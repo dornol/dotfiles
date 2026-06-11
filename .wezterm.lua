@@ -34,8 +34,6 @@ config.colors = {
     "#D1D5DA",
   },
 }
-config.window_background_opacity = 1.0
-config.text_background_opacity = 1.0
 config.bold_brightens_ansi_colors = false
 config.hide_tab_bar_if_only_one_tab = true
 config.window_padding = {
@@ -45,6 +43,5 @@ config.window_padding = {
   bottom = 10,
 }
 config.scrollback_lines = 10000
-config.enable_scroll_bar = false
 
 return config
