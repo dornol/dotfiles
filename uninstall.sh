@@ -4,6 +4,10 @@ set -e
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OS="$(uname -s)"
 ARCH="$(uname -m)"
+IS_WSL=false
+if [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null; then
+  IS_WSL=true
+fi
 
 PURGE=false
 for arg in "$@"; do
@@ -58,6 +62,20 @@ restore_latest_backup "$HOME/.zshrc"
 restore_latest_backup "$HOME/.tmux.conf"
 restore_latest_backup "$HOME/.claude/settings.json"
 restore_latest_backup "$HOME/.claude/hooks/notify.sh"
+
+# install.sh가 만든 Windows .ssh 링크 제거 후 기존 WSL .ssh 복원
+if [ "$IS_WSL" = true ] && [ -L "$HOME/.ssh" ] && command -v cmd.exe &>/dev/null && command -v wslpath &>/dev/null; then
+  WINDOWS_HOME_WIN="$(cmd.exe /C "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')"
+  WINDOWS_HOME="$(wslpath -u "$WINDOWS_HOME_WIN" 2>/dev/null || true)"
+  CURRENT_SSH_TARGET="$(realpath "$HOME/.ssh" 2>/dev/null || true)"
+  WINDOWS_SSH_TARGET="$(realpath "$WINDOWS_HOME/.ssh" 2>/dev/null || true)"
+
+  if [ -n "$WINDOWS_HOME" ] && [ "$CURRENT_SSH_TARGET" = "$WINDOWS_SSH_TARGET" ]; then
+    rm "$HOME/.ssh"
+    echo "Windows .ssh 링크 제거: $HOME/.ssh"
+    restore_latest_backup "$HOME/.ssh"
+  fi
+fi
 
 if [ "$PURGE" = true ]; then
   echo "설치한 도구 제거 중..."

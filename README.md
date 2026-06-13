@@ -39,6 +39,11 @@ WSL에서 `install.sh` 실행 시 Windows Terminal 테마/폰트도 자동 적�
 - 테마: GitHub Light
 - 폰트: JetBrains Mono Nerd Font (Regular)
 - 기본 프로파일에 자동 적용
+- WSL의 `~/.ssh`를 Windows `%USERPROFILE%\.ssh`에 심볼릭 링크
+
+기존 WSL `~/.ssh`가 디렉터리라면 `~/.ssh.bak.YYYYMMDDHHMMSS`로 백업됨.
+Windows 드라이브가 WSL에서 `metadata` 옵션 없이 마운트된 환경에서는 private key
+권한 검사에 실패할 수 있으므로, 그 경우 `/etc/wsl.conf`의 automount 옵션을 확인해야 함.
 
 개별 실행이 필요한 경우:
 
