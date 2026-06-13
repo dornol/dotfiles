@@ -6,12 +6,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-function Find-WTSettings {
+function Find-WTSettingsAll {
   @(
     "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json",
     "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json",
     "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
-  ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+  ) | Where-Object { Test-Path $_ }
 }
 
 function Get-LatestTag($repo) {
@@ -66,23 +66,11 @@ if (-not $ThemesOnly) {
 
 # -- Theme ------------------------------------------------------------------
 if (-not $FontsOnly) {
-  $settings = Find-WTSettings
-  if (-not $settings) {
+  $settingsFiles = Find-WTSettingsAll
+  if (-not $settingsFiles -or $settingsFiles.Count -eq 0) {
     Write-Warning "Windows Terminal settings not found. Run Windows Terminal once and try again."
   }
   else {
-    Write-Host "Installing theme... ($settings)"
-
-    $backup = "$settings.bak.$(Get-Date -Format 'yyyyMMddHHmmss')"
-    Copy-Item $settings $backup
-    Write-Host "Backup: $(Split-Path $backup -Leaf)"
-
-    $json = Get-Content $settings -Raw | ConvertFrom-Json
-
-    if (-not ($json.PSObject.Properties.Name -contains 'schemes')) {
-      $json | Add-Member -MemberType NoteProperty -Name 'schemes' -Value @()
-    }
-
     $scheme = [PSCustomObject]@{
       name                = 'GitHub Light'
       background          = '#FFFFFF'; foreground          = '#24292E'
@@ -97,28 +85,42 @@ if (-not $FontsOnly) {
       white               = '#6A737D'; brightWhite         = '#D1D5DA'
     }
 
-    $json.schemes = @($json.schemes | Where-Object { $_.name -ne $scheme.name }) + $scheme
-    Write-Host "  GitHub Light"
+    foreach ($settings in $settingsFiles) {
+      Write-Host "Installing theme... ($settings)"
 
-    if (-not ($json.PSObject.Properties.Name -contains 'profiles')) {
-      $json | Add-Member -MemberType NoteProperty -Name 'profiles' -Value ([PSCustomObject]@{})
-    }
-    if (-not ($json.profiles.PSObject.Properties.Name -contains 'defaults')) {
-      $json.profiles | Add-Member -MemberType NoteProperty -Name 'defaults' -Value ([PSCustomObject]@{})
-    }
-    $json.profiles.defaults | Add-Member -MemberType NoteProperty -Name 'colorScheme' -Value 'GitHub Light' -Force
-    $json.profiles.defaults | Add-Member -MemberType NoteProperty -Name 'font' `
-      -Value ([PSCustomObject]@{ face = 'JetBrainsMono Nerd Font' }) -Force
+      $backup = "$settings.bak.$(Get-Date -Format 'yyyyMMddHHmmss')"
+      Copy-Item $settings $backup
+      Write-Host "Backup: $(Split-Path $backup -Leaf)"
 
-    if ($json.profiles.PSObject.Properties.Name -contains 'list') {
-      foreach ($profile in $json.profiles.list) {
-        $profile | Add-Member -MemberType NoteProperty -Name 'colorScheme' -Value 'GitHub Light' -Force
+      $json = Get-Content $settings -Raw | ConvertFrom-Json
+
+      if (-not ($json.PSObject.Properties.Name -contains 'schemes')) {
+        $json | Add-Member -MemberType NoteProperty -Name 'schemes' -Value @()
       }
-    }
-    Write-Host "  Default profile: GitHub Light + JetBrainsMono Nerd Font"
 
-    $json | ConvertTo-Json -Depth 10 | Set-Content $settings -Encoding UTF8
-    Write-Host "Theme done"
+      $json.schemes = @($json.schemes | Where-Object { $_.name -ne $scheme.name }) + $scheme
+      Write-Host "  GitHub Light"
+
+      if (-not ($json.PSObject.Properties.Name -contains 'profiles')) {
+        $json | Add-Member -MemberType NoteProperty -Name 'profiles' -Value ([PSCustomObject]@{})
+      }
+      if (-not ($json.profiles.PSObject.Properties.Name -contains 'defaults')) {
+        $json.profiles | Add-Member -MemberType NoteProperty -Name 'defaults' -Value ([PSCustomObject]@{})
+      }
+      $json.profiles.defaults | Add-Member -MemberType NoteProperty -Name 'colorScheme' -Value 'GitHub Light' -Force
+      $json.profiles.defaults | Add-Member -MemberType NoteProperty -Name 'font' `
+        -Value ([PSCustomObject]@{ face = 'JetBrainsMono Nerd Font' }) -Force
+
+      if ($json.profiles.PSObject.Properties.Name -contains 'list') {
+        foreach ($profile in $json.profiles.list) {
+          $profile | Add-Member -MemberType NoteProperty -Name 'colorScheme' -Value 'GitHub Light' -Force
+        }
+      }
+      Write-Host "  Default profile: GitHub Light + JetBrainsMono Nerd Font"
+
+      $json | ConvertTo-Json -Depth 10 | Set-Content $settings -Encoding UTF8
+      Write-Host "Theme done"
+    }
   }
 }
 
