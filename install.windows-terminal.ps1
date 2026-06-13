@@ -109,6 +109,12 @@ if (-not $FontsOnly) {
     $json.profiles.defaults | Add-Member -MemberType NoteProperty -Name 'colorScheme' -Value 'GitHub Light' -Force
     $json.profiles.defaults | Add-Member -MemberType NoteProperty -Name 'font' `
       -Value ([PSCustomObject]@{ face = 'JetBrainsMono Nerd Font' }) -Force
+
+    if ($json.profiles.PSObject.Properties.Name -contains 'list') {
+      foreach ($profile in $json.profiles.list) {
+        $profile | Add-Member -MemberType NoteProperty -Name 'colorScheme' -Value 'GitHub Light' -Force
+      }
+    }
     Write-Host "  Default profile: GitHub Light + JetBrainsMono Nerd Font"
 
     $json | ConvertTo-Json -Depth 10 | Set-Content $settings -Encoding UTF8
