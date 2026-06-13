@@ -377,7 +377,9 @@ fi
 
 echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
 stow_out=$(stow --dir="$DOTFILES_DIR" --target="$HOME" --restow . 2>&1); stow_exit=$?
-echo "$stow_out" | grep -v "^BUG in find_stowed_path"
+if [ -n "$stow_out" ]; then
+  printf '%s\n' "$stow_out" | grep -v "^BUG in find_stowed_path" || true
+fi
 [ $stow_exit -ne 0 ] && exit $stow_exit
 
 echo "완료! 터미널 재시작하면 zsh로 전환돼."
@@ -387,10 +389,13 @@ fi
 
 # WSL이면 Windows Terminal 테마/폰트 자동 설치
 if [ "$IS_WSL" = true ]; then
+  echo "WSL 감지됨. Windows Terminal 설정 확인 중..."
   if command -v powershell.exe &>/dev/null; then
     echo "Windows Terminal 설정 중..."
     PS1_WIN="$(wslpath -w "$DOTFILES_DIR/install.windows-terminal.ps1")"
     powershell.exe -ExecutionPolicy Bypass -File "$PS1_WIN"
+  else
+    echo "powershell.exe를 찾지 못해 Windows Terminal 설정을 건너뜀."
   fi
 fi
 
