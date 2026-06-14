@@ -353,28 +353,6 @@ backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/settings.json"
 backup_if_exists "$HOME/.claude/hooks/notify.sh"
 
-# WSL에서는 Windows와 SSH 설정/키를 공유
-if [ "$IS_WSL" = true ] && command -v cmd.exe &>/dev/null && command -v wslpath &>/dev/null; then
-  WINDOWS_HOME_WIN="$(cmd.exe /C "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')"
-  WINDOWS_HOME="$(wslpath -u "$WINDOWS_HOME_WIN" 2>/dev/null || true)"
-  WINDOWS_SSH="$WINDOWS_HOME/.ssh"
-
-  if [ -n "$WINDOWS_HOME" ]; then
-    mkdir -p "$WINDOWS_SSH"
-    if [ -L "$HOME/.ssh" ]; then
-      CURRENT_SSH_TARGET="$(realpath "$HOME/.ssh" 2>/dev/null || true)"
-      WINDOWS_SSH_TARGET="$(realpath "$WINDOWS_SSH" 2>/dev/null || true)"
-      if [ "$CURRENT_SSH_TARGET" != "$WINDOWS_SSH_TARGET" ]; then
-        echo "주의: ~/.ssh가 다른 위치를 가리켜 Windows .ssh 링크를 건너뜁니다."
-      fi
-    else
-      backup_if_exists "$HOME/.ssh"
-      ln -s "$WINDOWS_SSH" "$HOME/.ssh"
-      echo "Windows .ssh 링크 완료: $HOME/.ssh -> $WINDOWS_SSH"
-    fi
-  fi
-fi
-
 echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
 stow_out=$(stow --dir="$DOTFILES_DIR" --target="$HOME" --restow . 2>&1); stow_exit=$?
 if [ -n "$stow_out" ]; then

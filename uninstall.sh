@@ -63,7 +63,7 @@ restore_latest_backup "$HOME/.tmux.conf"
 restore_latest_backup "$HOME/.claude/settings.json"
 restore_latest_backup "$HOME/.claude/hooks/notify.sh"
 
-# install.sh가 만든 Windows .ssh 링크 제거 후 기존 WSL .ssh 복원
+# 이전 버전의 install.sh가 만든 Windows .ssh 링크 제거 후 기존 WSL .ssh 복원
 if [ "$IS_WSL" = true ] && [ -L "$HOME/.ssh" ] && command -v cmd.exe &>/dev/null && command -v wslpath &>/dev/null; then
   WINDOWS_HOME_WIN="$(cmd.exe /C "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')"
   WINDOWS_HOME="$(wslpath -u "$WINDOWS_HOME_WIN" 2>/dev/null || true)"
