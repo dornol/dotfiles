@@ -128,8 +128,13 @@ if command -v starship &>/dev/null; then
 fi
 
 # dotfiles 자동 동기화 (하루 1회 백그라운드 pull + restow)
-# .zshrc 심볼릭 링크를 따라가서 dotfiles 디렉토리 자동 감지
-__DOTFILES_DIR="${${(%):-%x}:A:h}"
+# source된 파일 위치에서 dotfiles git 루트 자동 감지
+__DOTFILES_SOURCE="${${(%):-%x}:A}"
+__DOTFILES_DIR="${__DOTFILES_SOURCE:h}"
+while [ "$__DOTFILES_DIR" != "/" ] && [ ! -d "$__DOTFILES_DIR/.git" ]; do
+  __DOTFILES_DIR="${__DOTFILES_DIR:h}"
+done
+unset __DOTFILES_SOURCE
 __DOTFILES_LAST_PULL="$HOME/.cache/dotfiles-last-pull"
 __DOTFILES_LAST_ATTEMPT="$HOME/.cache/dotfiles-last-attempt"
 __DOTFILES_LOG="$HOME/.cache/dotfiles-update.log"

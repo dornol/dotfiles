@@ -138,6 +138,46 @@ install_claude_hook() {
   echo ".claude/hooks/notify.sh 링크 완료"
 }
 
+install_zsh_source_block() {
+  local target="$HOME/.zshrc"
+  local source="$DOTFILES_DIR/.config/zsh/dotfiles.zsh"
+  local begin="# >>> dotfiles >>>"
+  local end="# <<< dotfiles <<<"
+  local tmp
+  [ -f "$source" ] || return 0
+
+  if [ -L "$target" ]; then
+    local zshrc_real
+    zshrc_real=$(realpath "$target" 2>/dev/null || echo "")
+    if [[ "$zshrc_real" == "$DOTFILES_DIR"* ]]; then
+      tmp=$(mktemp)
+      if [ -e "$target" ]; then
+        cp "$target" "$tmp"
+      fi
+      rm "$target"
+      mv "$tmp" "$target"
+    fi
+  fi
+
+  touch "$target"
+  tmp=$(mktemp)
+  awk -v begin="$begin" -v end="$end" '
+    $0 == begin { skip = 1; next }
+    $0 == end { skip = 0; next }
+    !skip { print }
+  ' "$target" > "$tmp"
+  {
+    cat "$tmp"
+    printf '\n%s\n' "$begin"
+    printf 'if [ -f "%s" ]; then\n' "$source"
+    printf '  source "%s"\n' "$source"
+    printf 'fi\n'
+    printf '%s\n' "$end"
+  } > "$target"
+  rm -f "$tmp"
+  echo ".zshrc dotfiles source block 적용 완료"
+}
+
 # macOS: Homebrew 확인
 if [ "$OS" = "Darwin" ] && ! command -v brew &>/dev/null; then
   echo "Homebrew 설치 중..."
@@ -450,12 +490,12 @@ backup_if_exists "$HOME/.config/nvim"
 backup_if_exists "$HOME/.wezterm.lua"
 backup_if_exists "$HOME/.gitconfig"
 backup_if_exists "$HOME/.zshenv"
-backup_if_exists "$HOME/.zshrc"
 backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/hooks/notify.sh"
 
 merge_claude_settings
 install_claude_hook
+install_zsh_source_block
 
 echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
 set +e

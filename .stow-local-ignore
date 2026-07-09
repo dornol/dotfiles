@@ -2,6 +2,7 @@ README.md
 .git
 .gitattributes
 .claude
+.zshrc
 install.sh
 install.ps1
 uninstall.sh

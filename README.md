@@ -74,8 +74,9 @@ powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/uninstall.
 dotfiles-update
 ```
 
-dotfiles 디렉토리는 `.zshrc` 심볼릭 링크를 따라 자동 감지되므로
-설치 경로가 `~/dotfiles`가 아니어도 동작.
+`~/.zshrc`에는 dotfiles source block만 추가되고, 실제 zsh 설정은
+dotfiles 디렉토리의 `.config/zsh/dotfiles.zsh`에서 로드됨. 따라서 Go,
+SDKMAN 같은 설치 도구가 `~/.zshrc`에 로컬 설정을 추가해도 repo는 변경되지 않음.
 
 ## 민감한 환경변수
 
