@@ -79,8 +79,8 @@ remove_dotfiles_link() {
   fi
 }
 
-remove_zsh_source_block() {
-  local target="$HOME/.zshrc"
+remove_source_block() {
+  local target="$1"
   local begin="# >>> dotfiles >>>"
   local end="# <<< dotfiles <<<"
   local tmp
@@ -92,7 +92,7 @@ remove_zsh_source_block() {
     !skip { print }
   ' "$target" > "$tmp"
   mv "$tmp" "$target"
-  echo ".zshrc dotfiles source block 제거 완료"
+  echo "$target dotfiles source block 제거 완료"
 }
 
 PURGE=false
@@ -117,7 +117,8 @@ done
 
 remove_claude_settings
 remove_dotfiles_link "$HOME/.claude/hooks/notify.sh"
-remove_zsh_source_block
+remove_source_block "$HOME/.zshrc"
+remove_source_block "$HOME/.zshenv"
 
 # stow 링크 해제
 if command -v stow &>/dev/null; then
@@ -149,7 +150,6 @@ restore_latest_backup() {
 restore_latest_backup "$HOME/.config/nvim"
 restore_latest_backup "$HOME/.wezterm.lua"
 restore_latest_backup "$HOME/.gitconfig"
-restore_latest_backup "$HOME/.zshenv"
 restore_latest_backup "$HOME/.tmux.conf"
 restore_latest_backup "$HOME/.claude/hooks/notify.sh"
 

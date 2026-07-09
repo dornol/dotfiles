@@ -3,6 +3,8 @@ README.md
 .gitattributes
 .claude
 .zshrc
+.zshenv
+bin
 install.sh
 install.ps1
 uninstall.sh

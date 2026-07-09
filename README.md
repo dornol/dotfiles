@@ -2,7 +2,7 @@
 
 ## Linux / macOS / WSL
 
-사전 준비: `git`, `nvim`
+사전 준비: `git`, `curl`
 
 ```bash
 git clone git@github.com:dornol/dotfiles.git ~/dotfiles
@@ -67,7 +67,7 @@ powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/uninstall.
 ## 자동 동기화
 
 새 zsh 셸을 열 때마다 마지막 pull로부터 24시간 이상 지났으면 백그라운드로
-`git pull` + `stow --restow`를 자동 실행. 로컬에 커밋되지 않은 변경이 있으면
+`git pull` + `bin/dotfiles-apply`를 자동 실행. 로컬에 커밋되지 않은 변경이 있으면
 충돌 방지를 위해 스킵. 즉시 받고 싶으면:
 
 ```bash

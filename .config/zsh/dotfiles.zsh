@@ -127,7 +127,7 @@ if command -v starship &>/dev/null; then
   eval "$(starship init zsh)"
 fi
 
-# dotfiles 자동 동기화 (하루 1회 백그라운드 pull + restow)
+# dotfiles 자동 동기화 (하루 1회 백그라운드 pull + apply)
 # source된 파일 위치에서 dotfiles git 루트 자동 감지
 __DOTFILES_SOURCE="${${(%):-%x}:A}"
 __DOTFILES_DIR="${__DOTFILES_SOURCE:h}"
@@ -156,9 +156,9 @@ dotfiles-update() {
     __dotfiles_log "manual: pull failed"
     return 1
   fi
-  if command -v stow &>/dev/null; then
-    if ! stow --dir="$__DOTFILES_DIR" --target="$HOME" --restow .; then
-      __dotfiles_log "manual: stow failed"
+  if [ -x "$__DOTFILES_DIR/bin/dotfiles-apply" ]; then
+    if ! bash "$__DOTFILES_DIR/bin/dotfiles-apply"; then
+      __dotfiles_log "manual: apply failed"
       return 1
     fi
   fi
@@ -179,16 +179,16 @@ if [ -d "$__DOTFILES_DIR/.git" ]; then
       # 로컬 변경 있으면 충돌 위험으로 스킵
       if [ -z "$(git -C "$__DOTFILES_DIR" status --porcelain 2>/dev/null)" ]; then
         if git -C "$__DOTFILES_DIR" pull --ff-only --quiet 2>/dev/null; then
-          if command -v stow &>/dev/null; then
-            if stow --dir="$__DOTFILES_DIR" --target="$HOME" --restow . &>/dev/null; then
+          if [ -x "$__DOTFILES_DIR/bin/dotfiles-apply" ]; then
+            if bash "$__DOTFILES_DIR/bin/dotfiles-apply" &>/dev/null; then
               date +%s > "$__DOTFILES_LAST_PULL"
               __dotfiles_log "auto: updated"
             else
-              __dotfiles_log "auto: stow failed"
+              __dotfiles_log "auto: apply failed"
             fi
           else
             date +%s > "$__DOTFILES_LAST_PULL"
-            __dotfiles_log "auto: pulled, stow missing"
+            __dotfiles_log "auto: pulled, apply missing"
           fi
         else
           __dotfiles_log "auto: pull failed"

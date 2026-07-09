@@ -53,135 +53,16 @@ github_latest_tag() {
   printf '%s\n' "$tag"
 }
 
-merge_claude_settings() {
-  local source="$DOTFILES_DIR/.claude/settings.json"
-  local target="$HOME/.claude/settings.json"
-  [ -f "$source" ] || return 0
-  if [ -L "$HOME/.claude" ]; then
-    local claude_real
-    claude_real=$(realpath "$HOME/.claude" 2>/dev/null || echo "")
-    if [[ "$claude_real" == "$DOTFILES_DIR/.claude" ]]; then
-      rm "$HOME/.claude"
-    fi
-  fi
-  mkdir -p "$HOME/.claude"
-
-  if [ -L "$target" ]; then
-    local linked_real
-    linked_real=$(realpath "$target" 2>/dev/null || echo "")
-    if [[ "$linked_real" == "$DOTFILES_DIR"* ]]; then
-      rm "$target"
-    fi
-  fi
-
-  if command -v jq &>/dev/null; then
-    if [ -f "$target" ]; then
-      local tmp
-      tmp=$(mktemp)
-      jq -s 'def deepmerge($a; $b):
-        reduce ($b | keys_unsorted[]) as $key ($a;
-          .[$key] = if (.[$key] | type) == "object" and ($b[$key] | type) == "object"
-            then deepmerge(.[$key]; $b[$key])
-            else $b[$key]
-            end
-        );
-        deepmerge(.[0]; .[1])' "$target" "$source" > "$tmp"
-      mv "$tmp" "$target"
-      echo ".claude/settings.json 병합 완료"
-    else
-      cp "$source" "$target"
-      echo ".claude/settings.json 생성 완료"
-    fi
-  elif command -v python3 &>/dev/null; then
-    TARGET_SETTINGS="$target" SOURCE_SETTINGS="$source" python3 <<'PY'
-import json
-import os
-from pathlib import Path
-
-target = Path(os.environ["TARGET_SETTINGS"])
-source = Path(os.environ["SOURCE_SETTINGS"])
-
-def merge(a, b):
-    result = dict(a)
-    for key, value in b.items():
-        if isinstance(result.get(key), dict) and isinstance(value, dict):
-            result[key] = merge(result[key], value)
-        else:
-            result[key] = value
-    return result
-
-base = json.loads(target.read_text()) if target.exists() else {}
-overlay = json.loads(source.read_text())
-target.write_text(json.dumps(merge(base, overlay), indent=2, ensure_ascii=False) + "\n")
-PY
-    echo ".claude/settings.json 병합 완료"
-  else
-    cp "$source" "$target"
-    echo ".claude/settings.json 생성 완료 (merge 도구 없음)"
-  fi
-}
-
-install_claude_hook() {
-  local source="$DOTFILES_DIR/.claude/hooks/notify.sh"
-  local target_dir="$HOME/.claude/hooks"
-  local target="$target_dir/notify.sh"
-  [ -f "$source" ] || return 0
-  if [ -L "$HOME/.claude" ]; then
-    local claude_real
-    claude_real=$(realpath "$HOME/.claude" 2>/dev/null || echo "")
-    if [[ "$claude_real" == "$DOTFILES_DIR/.claude" ]]; then
-      rm "$HOME/.claude"
-    fi
-  fi
-  mkdir -p "$target_dir"
-  ln -sf "$source" "$target"
-  echo ".claude/hooks/notify.sh 링크 완료"
-}
-
-install_zsh_source_block() {
-  local target="$HOME/.zshrc"
-  local source="$DOTFILES_DIR/.config/zsh/dotfiles.zsh"
-  local begin="# >>> dotfiles >>>"
-  local end="# <<< dotfiles <<<"
-  local tmp
-  [ -f "$source" ] || return 0
-
-  if [ -L "$target" ]; then
-    local zshrc_real
-    zshrc_real=$(realpath "$target" 2>/dev/null || echo "")
-    if [[ "$zshrc_real" == "$DOTFILES_DIR"* ]]; then
-      tmp=$(mktemp)
-      if [ -e "$target" ]; then
-        cp "$target" "$tmp"
-      fi
-      rm "$target"
-      mv "$tmp" "$target"
-    fi
-  fi
-
-  touch "$target"
-  tmp=$(mktemp)
-  awk -v begin="$begin" -v end="$end" '
-    $0 == begin { skip = 1; next }
-    $0 == end { skip = 0; next }
-    !skip { print }
-  ' "$target" > "$tmp"
-  {
-    cat "$tmp"
-    printf '\n%s\n' "$begin"
-    printf 'if [ -f "%s" ]; then\n' "$source"
-    printf '  source "%s"\n' "$source"
-    printf 'fi\n'
-    printf '%s\n' "$end"
-  } > "$target"
-  rm -f "$tmp"
-  echo ".zshrc dotfiles source block 적용 완료"
-}
-
 # macOS: Homebrew 확인
 if [ "$OS" = "Darwin" ] && ! command -v brew &>/dev/null; then
   echo "Homebrew 설치 중..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+# curl 확인
+if ! command -v curl &>/dev/null; then
+  echo "curl 설치 중..."
+  pkg_install curl
 fi
 
 # stow 설치
@@ -264,7 +145,7 @@ fi
 # starship 설치
 if ! command -v starship &>/dev/null; then
   echo "starship 설치 중..."
-  curl -sS https://starship.rs/install.sh | sh -s -- --yes
+  curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
 fi
 
 # fzf 설치 (최신 버전 GitHub에서 직접)
@@ -489,23 +370,11 @@ backup_if_exists() {
 backup_if_exists "$HOME/.config/nvim"
 backup_if_exists "$HOME/.wezterm.lua"
 backup_if_exists "$HOME/.gitconfig"
-backup_if_exists "$HOME/.zshenv"
 backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/hooks/notify.sh"
 
-merge_claude_settings
-install_claude_hook
-install_zsh_source_block
-
-echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
-set +e
-stow_out=$(stow --dir="$DOTFILES_DIR" --target="$HOME" --restow . 2>&1)
-stow_exit=$?
-set -e
-if [ -n "$stow_out" ]; then
-  printf '%s\n' "$stow_out" | grep -v "^BUG in find_stowed_path" || true
-fi
-[ $stow_exit -ne 0 ] && exit $stow_exit
+echo "dotfiles 적용 중... ($DOTFILES_DIR -> $HOME)"
+bash "$DOTFILES_DIR/bin/dotfiles-apply"
 
 echo "완료! 터미널 재시작하면 zsh로 전환돼."
 if [ "$NVIM_INSTALLED" = false ]; then
