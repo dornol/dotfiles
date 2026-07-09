@@ -9,6 +9,76 @@ if [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/nu
   IS_WSL=true
 fi
 
+remove_claude_settings() {
+  local source="$DOTFILES_DIR/.claude/settings.json"
+  local target="$HOME/.claude/settings.json"
+  [ -f "$source" ] && [ -f "$target" ] || return 0
+  if [ "$(realpath "$source" 2>/dev/null || echo "$source")" = "$(realpath "$target" 2>/dev/null || echo "$target")" ]; then
+    return 0
+  fi
+
+  if command -v jq &>/dev/null; then
+    local tmp
+    tmp=$(mktemp)
+    jq -s 'def remove_keys($a; $b):
+      reduce ($b | keys_unsorted[]) as $key ($a;
+        if (.[$key] | type) == "object" and ($b[$key] | type) == "object"
+        then .[$key] = remove_keys(.[$key]; $b[$key])
+          | if .[$key] == {} then del(.[$key]) else . end
+        else del(.[$key])
+        end
+      );
+      remove_keys(.[0]; .[1])' "$target" "$source" > "$tmp"
+    if [ "$(jq 'length' "$tmp")" -eq 0 ]; then
+      rm -f "$target" "$tmp"
+      echo ".claude/settings.json 제거됨 (빈 설정)"
+    else
+      mv "$tmp" "$target"
+      echo ".claude/settings.json: dotfiles 설정 제거 완료"
+    fi
+  elif command -v python3 &>/dev/null; then
+    TARGET_SETTINGS="$target" SOURCE_SETTINGS="$source" python3 <<'PY'
+import json
+import os
+from pathlib import Path
+
+target = Path(os.environ["TARGET_SETTINGS"])
+source = Path(os.environ["SOURCE_SETTINGS"])
+
+def remove_keys(a, b):
+    result = dict(a)
+    for key, value in b.items():
+        if isinstance(result.get(key), dict) and isinstance(value, dict):
+            result[key] = remove_keys(result[key], value)
+            if not result[key]:
+                result.pop(key, None)
+        else:
+            result.pop(key, None)
+    return result
+
+remaining = remove_keys(json.loads(target.read_text()), json.loads(source.read_text()))
+if remaining:
+    target.write_text(json.dumps(remaining, indent=2, ensure_ascii=False) + "\n")
+else:
+    target.unlink()
+PY
+    echo ".claude/settings.json: dotfiles 설정 제거 완료"
+  else
+    echo "jq 또는 python3가 없어 .claude/settings.json 정리를 건너뜀."
+  fi
+}
+
+remove_dotfiles_link() {
+  local target="$1"
+  local real
+  [ -L "$target" ] || return 0
+  real=$(realpath "$target" 2>/dev/null || echo "")
+  if [[ "$real" == "$DOTFILES_DIR"* ]]; then
+    rm "$target"
+    echo "dotfiles 링크 제거: $target"
+  fi
+}
+
 PURGE=false
 for arg in "$@"; do
   case "$arg" in
@@ -28,6 +98,9 @@ EOF
     *) echo "알 수 없는 옵션: $arg"; exit 1 ;;
   esac
 done
+
+remove_claude_settings
+remove_dotfiles_link "$HOME/.claude/hooks/notify.sh"
 
 # stow 링크 해제
 if command -v stow &>/dev/null; then
@@ -62,7 +135,6 @@ restore_latest_backup "$HOME/.gitconfig"
 restore_latest_backup "$HOME/.zshenv"
 restore_latest_backup "$HOME/.zshrc"
 restore_latest_backup "$HOME/.tmux.conf"
-restore_latest_backup "$HOME/.claude/settings.json"
 restore_latest_backup "$HOME/.claude/hooks/notify.sh"
 
 # 이전 버전의 install.sh가 만든 Windows .ssh 링크 제거 후 기존 WSL .ssh 복원

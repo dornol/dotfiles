@@ -53,6 +53,91 @@ github_latest_tag() {
   printf '%s\n' "$tag"
 }
 
+merge_claude_settings() {
+  local source="$DOTFILES_DIR/.claude/settings.json"
+  local target="$HOME/.claude/settings.json"
+  [ -f "$source" ] || return 0
+  if [ -L "$HOME/.claude" ]; then
+    local claude_real
+    claude_real=$(realpath "$HOME/.claude" 2>/dev/null || echo "")
+    if [[ "$claude_real" == "$DOTFILES_DIR/.claude" ]]; then
+      rm "$HOME/.claude"
+    fi
+  fi
+  mkdir -p "$HOME/.claude"
+
+  if [ -L "$target" ]; then
+    local linked_real
+    linked_real=$(realpath "$target" 2>/dev/null || echo "")
+    if [[ "$linked_real" == "$DOTFILES_DIR"* ]]; then
+      rm "$target"
+    fi
+  fi
+
+  if command -v jq &>/dev/null; then
+    if [ -f "$target" ]; then
+      local tmp
+      tmp=$(mktemp)
+      jq -s 'def deepmerge($a; $b):
+        reduce ($b | keys_unsorted[]) as $key ($a;
+          .[$key] = if (.[$key] | type) == "object" and ($b[$key] | type) == "object"
+            then deepmerge(.[$key]; $b[$key])
+            else $b[$key]
+            end
+        );
+        deepmerge(.[0]; .[1])' "$target" "$source" > "$tmp"
+      mv "$tmp" "$target"
+      echo ".claude/settings.json 병합 완료"
+    else
+      cp "$source" "$target"
+      echo ".claude/settings.json 생성 완료"
+    fi
+  elif command -v python3 &>/dev/null; then
+    TARGET_SETTINGS="$target" SOURCE_SETTINGS="$source" python3 <<'PY'
+import json
+import os
+from pathlib import Path
+
+target = Path(os.environ["TARGET_SETTINGS"])
+source = Path(os.environ["SOURCE_SETTINGS"])
+
+def merge(a, b):
+    result = dict(a)
+    for key, value in b.items():
+        if isinstance(result.get(key), dict) and isinstance(value, dict):
+            result[key] = merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+base = json.loads(target.read_text()) if target.exists() else {}
+overlay = json.loads(source.read_text())
+target.write_text(json.dumps(merge(base, overlay), indent=2, ensure_ascii=False) + "\n")
+PY
+    echo ".claude/settings.json 병합 완료"
+  else
+    cp "$source" "$target"
+    echo ".claude/settings.json 생성 완료 (merge 도구 없음)"
+  fi
+}
+
+install_claude_hook() {
+  local source="$DOTFILES_DIR/.claude/hooks/notify.sh"
+  local target_dir="$HOME/.claude/hooks"
+  local target="$target_dir/notify.sh"
+  [ -f "$source" ] || return 0
+  if [ -L "$HOME/.claude" ]; then
+    local claude_real
+    claude_real=$(realpath "$HOME/.claude" 2>/dev/null || echo "")
+    if [[ "$claude_real" == "$DOTFILES_DIR/.claude" ]]; then
+      rm "$HOME/.claude"
+    fi
+  fi
+  mkdir -p "$target_dir"
+  ln -sf "$source" "$target"
+  echo ".claude/hooks/notify.sh 링크 완료"
+}
+
 # macOS: Homebrew 확인
 if [ "$OS" = "Darwin" ] && ! command -v brew &>/dev/null; then
   echo "Homebrew 설치 중..."
@@ -367,8 +452,10 @@ backup_if_exists "$HOME/.gitconfig"
 backup_if_exists "$HOME/.zshenv"
 backup_if_exists "$HOME/.zshrc"
 backup_if_exists "$HOME/.tmux.conf"
-backup_if_exists "$HOME/.claude/settings.json"
 backup_if_exists "$HOME/.claude/hooks/notify.sh"
+
+merge_claude_settings
+install_claude_hook
 
 echo "dotfiles 링크 중... ($DOTFILES_DIR -> $HOME)"
 set +e
