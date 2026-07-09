@@ -100,7 +100,24 @@ install_claude_hook() {
       rm "$HOME/.claude"
     fi
   fi
+  if [ -L "$target_dir" ]; then
+    local hooks_real
+    hooks_real=$(realpath "$target_dir" 2>/dev/null || echo "")
+    if [[ "$hooks_real" == "$DOTFILES_DIR"* ]]; then
+      rm "$target_dir"
+    fi
+  fi
   mkdir -p "$target_dir"
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    local source_real
+    local target_real
+    source_real=$(realpath "$source" 2>/dev/null || echo "$source")
+    target_real=$(realpath "$target" 2>/dev/null || echo "$target")
+    if [ "$source_real" = "$target_real" ]; then
+      [ -L "$target" ] && return 0
+      rm -f "$target"
+    fi
+  fi
   ln -sf "$source" "$target"
 }
 
