@@ -9,92 +9,6 @@ if [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/nu
   IS_WSL=true
 fi
 
-remove_claude_settings() {
-  local source="$DOTFILES_DIR/.claude/settings.json"
-  local target="$HOME/.claude/settings.json"
-  [ -f "$source" ] && [ -f "$target" ] || return 0
-  if [ "$(realpath "$source" 2>/dev/null || echo "$source")" = "$(realpath "$target" 2>/dev/null || echo "$target")" ]; then
-    return 0
-  fi
-
-  if command -v jq &>/dev/null; then
-    local tmp
-    tmp=$(mktemp)
-    jq -s 'def remove_keys($a; $b):
-      reduce ($b | keys_unsorted[]) as $key ($a;
-        if (.[$key] | type) == "object" and ($b[$key] | type) == "object"
-        then .[$key] = remove_keys(.[$key]; $b[$key])
-          | if .[$key] == {} then del(.[$key]) else . end
-        else del(.[$key])
-        end
-      );
-      remove_keys(.[0]; .[1])' "$target" "$source" > "$tmp"
-    if [ "$(jq 'length' "$tmp")" -eq 0 ]; then
-      rm -f "$target" "$tmp"
-      echo ".claude/settings.json 제거됨 (빈 설정)"
-    else
-      mv "$tmp" "$target"
-      echo ".claude/settings.json: dotfiles 설정 제거 완료"
-    fi
-  elif command -v python3 &>/dev/null; then
-    TARGET_SETTINGS="$target" SOURCE_SETTINGS="$source" python3 <<'PY'
-import json
-import os
-from pathlib import Path
-
-target = Path(os.environ["TARGET_SETTINGS"])
-source = Path(os.environ["SOURCE_SETTINGS"])
-
-def remove_keys(a, b):
-    result = dict(a)
-    for key, value in b.items():
-        if isinstance(result.get(key), dict) and isinstance(value, dict):
-            result[key] = remove_keys(result[key], value)
-            if not result[key]:
-                result.pop(key, None)
-        else:
-            result.pop(key, None)
-    return result
-
-remaining = remove_keys(json.loads(target.read_text()), json.loads(source.read_text()))
-if remaining:
-    target.write_text(json.dumps(remaining, indent=2, ensure_ascii=False) + "\n")
-else:
-    target.unlink()
-PY
-    echo ".claude/settings.json: dotfiles 설정 제거 완료"
-  else
-    echo "jq 또는 python3가 없어 .claude/settings.json 정리를 건너뜀."
-  fi
-}
-
-remove_dotfiles_link() {
-  local target="$1"
-  local real
-  [ -L "$target" ] || return 0
-  real=$(realpath "$target" 2>/dev/null || echo "")
-  if [[ "$real" == "$DOTFILES_DIR"* ]]; then
-    rm "$target"
-    echo "dotfiles 링크 제거: $target"
-  fi
-}
-
-remove_source_block() {
-  local target="$1"
-  local begin="# >>> dotfiles >>>"
-  local end="# <<< dotfiles <<<"
-  local tmp
-  [ -f "$target" ] || return 0
-  tmp=$(mktemp)
-  awk -v begin="$begin" -v end="$end" '
-    $0 == begin { skip = 1; next }
-    $0 == end { skip = 0; next }
-    !skip { print }
-  ' "$target" > "$tmp"
-  mv "$tmp" "$target"
-  echo "$target dotfiles source block 제거 완료"
-}
-
 PURGE=false
 for arg in "$@"; do
   case "$arg" in
@@ -103,8 +17,9 @@ for arg in "$@"; do
       cat <<EOF
 사용법: bash uninstall.sh [--purge]
 
-기본:    stow 링크 해제 + .bashrc의 zsh 자동 전환 라인 제거 + 백업 복원
+기본:    stow 링크 해제 + source block 제거 + .bashrc의 zsh 자동 전환 라인 제거 + 백업 복원
 --purge: 추가로 install.sh가 직접 설치한 도구 제거
+         Claude settings의 dotfiles key 제거
          (zsh 플러그인, starship, fzf, delta, bat, fd, rg, eza,
           zoxide, lazygit, fnm, nvim, ruff)
          패키지 매니저로 설치된 stow/zsh/tmux/pipx는 건드리지 않음
@@ -115,15 +30,11 @@ EOF
   esac
 done
 
-remove_claude_settings
-remove_dotfiles_link "$HOME/.claude/hooks/notify.sh"
-remove_source_block "$HOME/.zshrc"
-remove_source_block "$HOME/.zshenv"
-
-# stow 링크 해제
-if command -v stow &>/dev/null; then
-  echo "dotfiles 링크 해제 중..."
-  stow --dir="$DOTFILES_DIR" --target="$HOME" --delete . || true
+echo "dotfiles 링크와 source block 해제 중..."
+if [ "$PURGE" = true ]; then
+  bash "$DOTFILES_DIR/bin/dotfiles-apply" --remove --purge
+else
+  bash "$DOTFILES_DIR/bin/dotfiles-apply" --remove
 fi
 
 # .bashrc에서 zsh 자동 전환 라인 제거

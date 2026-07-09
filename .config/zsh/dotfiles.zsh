@@ -108,13 +108,14 @@ if command -v bat &>/dev/null; then
   export FZF_DEFAULT_OPTS="--preview 'bat --color=always --line-range :100 {}'"
 fi
 if command -v fzf &>/dev/null; then
-  if fzf --zsh &>/dev/null; then
-    source <(fzf --zsh) 2>/dev/null
+  if __FZF_ZSH_INIT="$(fzf --zsh 2>/dev/null)"; then
+    source <(printf '%s\n' "$__FZF_ZSH_INIT") 2>/dev/null
   else
     # 구버전 fzf 호환
     [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
     [ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
   fi
+  unset __FZF_ZSH_INIT
 fi
 
 # 플러그인

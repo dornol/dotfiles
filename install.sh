@@ -42,7 +42,10 @@ github_latest_tag() {
   local repo="$1"
   local response
   local tag
-  response=$(curl -fsSL -H 'User-Agent: dotfiles' "https://api.github.com/repos/$repo/releases/latest")
+  if ! response=$(curl -fsSL -H 'User-Agent: dotfiles' "https://api.github.com/repos/$repo/releases/latest"); then
+    echo "GitHub 릴리스 정보를 가져오지 못했습니다: $repo" >&2
+    exit 1
+  fi
   tag=$(printf '%s\n' "$response" \
     | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
     | head -n 1)
@@ -53,10 +56,28 @@ github_latest_tag() {
   printf '%s\n' "$tag"
 }
 
+download() {
+  local url="$1"
+  echo "다운로드 중: $url" >&2
+  if ! curl -fsSL "$url"; then
+    echo "다운로드 실패: $url" >&2
+    return 1
+  fi
+}
+
 # macOS: Homebrew 확인
 if [ "$OS" = "Darwin" ] && ! command -v brew &>/dev/null; then
   echo "Homebrew 설치 중..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  HOMEBREW_INSTALL_SCRIPT=$(mktemp)
+  if ! download https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh > "$HOMEBREW_INSTALL_SCRIPT"; then
+    rm -f "$HOMEBREW_INSTALL_SCRIPT"
+    exit 1
+  fi
+  if ! /bin/bash "$HOMEBREW_INSTALL_SCRIPT"; then
+    rm -f "$HOMEBREW_INSTALL_SCRIPT"
+    exit 1
+  fi
+  rm -f "$HOMEBREW_INSTALL_SCRIPT"
 fi
 
 # curl 확인
@@ -104,7 +125,7 @@ else
       if [ "${GLIBC_MINOR:-0}" -lt 29 ] 2>/dev/null; then
         echo "GLIBC $GLIBC_VER — nvim 최신 버전 미지원, 건너뜀"
       else
-        curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" | sudo tar -xz -C /opt
+        download "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" | sudo tar -xz -C /opt
         sudo ln -sf "/opt/nvim-linux-${NVIM_ARCH}/bin/nvim" /usr/local/bin/nvim
         NVIM_INSTALLED=true
       fi
@@ -145,7 +166,7 @@ fi
 # starship 설치
 if ! command -v starship &>/dev/null; then
   echo "starship 설치 중..."
-  curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
+  download https://starship.rs/install.sh | sh -s -- --yes
 fi
 
 # fzf 설치 (최신 버전 GitHub에서 직접)
@@ -156,7 +177,7 @@ if ! command -v fzf &>/dev/null; then
       FZF_VERSION=$(github_latest_tag junegunn/fzf)
       FZF_VER="${FZF_VERSION#v}"
       FZF_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "amd64")
-      curl -fsSL "https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VER}-linux_${FZF_ARCH}.tar.gz" | tar -xz -C ~/.local/bin
+      download "https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VER}-linux_${FZF_ARCH}.tar.gz" | tar -xz -C ~/.local/bin
       ;;
     Darwin)
       brew install fzf
@@ -179,7 +200,7 @@ if ! command -v delta &>/dev/null; then
         DELTA_LIBC="musl"
       fi
       DELTA_TRIPLE="${DELTA_ARCH}-unknown-linux-${DELTA_LIBC}"
-      curl -fsSL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VER}-${DELTA_TRIPLE}.tar.gz" | tar -xz -C /tmp
+      download "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VER}-${DELTA_TRIPLE}.tar.gz" | tar -xz -C /tmp
       mv "/tmp/delta-${DELTA_VER}-${DELTA_TRIPLE}/delta" "$HOME/.local/bin/delta"
       rm -rf "/tmp/delta-${DELTA_VER}-${DELTA_TRIPLE}"
       ;;
@@ -197,7 +218,7 @@ if ! command -v bat &>/dev/null; then
       BAT_VERSION=$(github_latest_tag sharkdp/bat)
       BAT_VER="${BAT_VERSION#v}"
       BAT_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-      curl -fsSL "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
+      download "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
       mv "/tmp/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl/bat" "$HOME/.local/bin/bat"
       rm -rf "/tmp/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl"
       ;;
@@ -215,7 +236,7 @@ if ! command -v fd &>/dev/null; then
       FD_VERSION=$(github_latest_tag sharkdp/fd)
       FD_VER="${FD_VERSION#v}"
       FD_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-      curl -fsSL "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
+      download "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
       mv "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl/fd" "$HOME/.local/bin/fd"
       rm -rf "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl"
       ;;
@@ -239,7 +260,7 @@ if ! command -v rg &>/dev/null; then
         RG_LIBC="musl"
       fi
       RG_TRIPLE="${RG_ARCH}-unknown-linux-${RG_LIBC}"
-      curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_TRIPLE}.tar.gz" | tar -xz -C /tmp
+      download "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_TRIPLE}.tar.gz" | tar -xz -C /tmp
       mv "/tmp/ripgrep-${RG_VERSION}-${RG_TRIPLE}/rg" "$HOME/.local/bin/rg"
       rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_TRIPLE}"
       ;;
@@ -256,7 +277,7 @@ if ! command -v eza &>/dev/null; then
     Linux)
       EZA_VERSION=$(github_latest_tag eza-community/eza)
       EZA_LIBC=$([ "$ARCH" = "aarch64" ] && echo "gnu" || echo "musl")
-      curl -fsSL "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${ARCH}-unknown-linux-${EZA_LIBC}.tar.gz" | tar -xz -C /tmp
+      download "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${ARCH}-unknown-linux-${EZA_LIBC}.tar.gz" | tar -xz -C /tmp
       mv "/tmp/eza" "$HOME/.local/bin/eza"
       ;;
     Darwin)
@@ -273,7 +294,7 @@ if ! command -v zoxide &>/dev/null; then
       ZOXIDE_VERSION=$(github_latest_tag ajeetdsouza/zoxide)
       ZOXIDE_VER="${ZOXIDE_VERSION#v}"
       ZOXIDE_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-      curl -fsSL "https://github.com/ajeetdsouza/zoxide/releases/download/${ZOXIDE_VERSION}/zoxide-${ZOXIDE_VER}-${ZOXIDE_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
+      download "https://github.com/ajeetdsouza/zoxide/releases/download/${ZOXIDE_VERSION}/zoxide-${ZOXIDE_VER}-${ZOXIDE_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
       mv "/tmp/zoxide" "$HOME/.local/bin/zoxide"
       ;;
     Darwin)
@@ -290,7 +311,7 @@ if ! command -v lazygit &>/dev/null; then
       LG_VERSION=$(github_latest_tag jesseduffield/lazygit)
       LG_VER="${LG_VERSION#v}"
       LG_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x86_64")
-      curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/${LG_VERSION}/lazygit_${LG_VER}_Linux_${LG_ARCH}.tar.gz" | tar -xz -C /tmp
+      download "https://github.com/jesseduffield/lazygit/releases/download/${LG_VERSION}/lazygit_${LG_VER}_Linux_${LG_ARCH}.tar.gz" | tar -xz -C /tmp
       mv "/tmp/lazygit" "$HOME/.local/bin/lazygit"
       ;;
     Darwin)
@@ -328,7 +349,7 @@ fi
 if ! command -v fnm &>/dev/null; then
   echo "fnm 설치 중..."
   pkg_install unzip
-  curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir ~/.local/bin --skip-shell
+  download https://fnm.vercel.app/install | bash -s -- --install-dir ~/.local/bin --skip-shell
 fi
 
 if command -v fnm &>/dev/null && ! fnm list | grep -q lts; then
