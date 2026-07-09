@@ -2,6 +2,31 @@
 $DOTFILES = Split-Path -Parent $MyInvocation.MyCommand.Path
 $HOME_DIR = $env:USERPROFILE
 
+function Merge-JsonObject {
+  param(
+    [Parameter(Mandatory = $true)]$Target,
+    [Parameter(Mandatory = $true)]$Source
+  )
+
+  foreach ($property in $Source.PSObject.Properties) {
+    $name = $property.Name
+    $value = $property.Value
+
+    if ($Target.PSObject.Properties.Name -contains $name) {
+      $targetValue = $Target.$name
+      if (($targetValue -is [pscustomobject]) -and ($value -is [pscustomobject])) {
+        Merge-JsonObject -Target $targetValue -Source $value | Out-Null
+      } else {
+        $Target | Add-Member -MemberType NoteProperty -Name $name -Value $value -Force
+      }
+    } else {
+      $Target | Add-Member -MemberType NoteProperty -Name $name -Value $value
+    }
+  }
+
+  return $Target
+}
+
 # .gitconfig
 $gitconfig = "$HOME_DIR\.gitconfig"
 if ((Test-Path $gitconfig) -and (-not (Get-Item $gitconfig).LinkType)) {
@@ -22,9 +47,7 @@ $dotfilesJson = Get-Content $sourceSettings -Raw | ConvertFrom-Json
 
 if (Test-Path $targetSettings) {
   $existingJson = Get-Content $targetSettings -Raw | ConvertFrom-Json
-  foreach ($key in $dotfilesJson.PSObject.Properties.Name) {
-    $existingJson | Add-Member -MemberType NoteProperty -Name $key -Value $dotfilesJson.$key -Force
-  }
+  Merge-JsonObject -Target $existingJson -Source $dotfilesJson | Out-Null
   $existingJson | ConvertTo-Json -Depth 10 | Set-Content $targetSettings
   Write-Host ".claude/settings.json merged"
 } else {

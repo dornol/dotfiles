@@ -2,6 +2,31 @@
 $DOTFILES = Split-Path -Parent $MyInvocation.MyCommand.Path
 $HOME_DIR = $env:USERPROFILE
 
+function Remove-JsonObjectProperties {
+  param(
+    [Parameter(Mandatory = $true)]$Target,
+    [Parameter(Mandatory = $true)]$Source
+  )
+
+  foreach ($property in $Source.PSObject.Properties) {
+    $name = $property.Name
+    if (-not ($Target.PSObject.Properties.Name -contains $name)) {
+      continue
+    }
+
+    $targetValue = $Target.$name
+    $sourceValue = $property.Value
+    if (($targetValue -is [pscustomobject]) -and ($sourceValue -is [pscustomobject])) {
+      Remove-JsonObjectProperties -Target $targetValue -Source $sourceValue
+      if ($targetValue.PSObject.Properties.Count -eq 0) {
+        $Target.PSObject.Properties.Remove($name)
+      }
+    } else {
+      $Target.PSObject.Properties.Remove($name)
+    }
+  }
+}
+
 function Restore-LatestBackup {
   param([string]$Target)
   $parent = Split-Path $Target -Parent
@@ -32,11 +57,7 @@ $sourceSettings = "$DOTFILES\.claude\settings.json"
 if ((Test-Path $targetSettings) -and (Test-Path $sourceSettings)) {
   $dotfilesJson = Get-Content $sourceSettings -Raw | ConvertFrom-Json
   $existingJson = Get-Content $targetSettings -Raw | ConvertFrom-Json
-  foreach ($key in $dotfilesJson.PSObject.Properties.Name) {
-    if ($existingJson.PSObject.Properties.Name -contains $key) {
-      $existingJson.PSObject.Properties.Remove($key)
-    }
-  }
+  Remove-JsonObjectProperties -Target $existingJson -Source $dotfilesJson
   if ($existingJson.PSObject.Properties.Count -eq 0) {
     Remove-Item $targetSettings -Force
     Write-Host ".claude/settings.json removed (empty after key removal)"

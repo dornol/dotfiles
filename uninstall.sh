@@ -19,7 +19,8 @@ for arg in "$@"; do
 
 기본:    stow 링크 해제 + .bashrc의 zsh 자동 전환 라인 제거 + 백업 복원
 --purge: 추가로 install.sh가 직접 설치한 도구 제거
-         (zsh 플러그인, starship, fzf, delta, fnm, nvim, ruff)
+         (zsh 플러그인, starship, fzf, delta, bat, fd, rg, eza,
+          zoxide, lazygit, fnm, nvim, ruff)
          패키지 매니저로 설치된 stow/zsh/tmux/pipx는 건드리지 않음
 EOF
       exit 0
@@ -92,9 +93,15 @@ if [ "$PURGE" = true ]; then
     sudo rm -f /usr/local/bin/starship
   fi
 
-  # fzf, delta, fnm (~/.local/bin)
+  # GitHub 릴리스/설치 스크립트로 ~/.local/bin에 직접 설치한 도구
   rm -f "$HOME/.local/bin/fzf"
   rm -f "$HOME/.local/bin/delta"
+  rm -f "$HOME/.local/bin/bat"
+  rm -f "$HOME/.local/bin/fd"
+  rm -f "$HOME/.local/bin/rg"
+  rm -f "$HOME/.local/bin/eza"
+  rm -f "$HOME/.local/bin/zoxide"
+  rm -f "$HOME/.local/bin/lazygit"
   rm -f "$HOME/.local/bin/fnm"
   rm -rf "$HOME/.local/share/fnm"
 
