@@ -61,7 +61,8 @@ bash ~/dotfiles/uninstall.sh --purge   # 추가로 설치한 도구 제거
 Windows:
 
 ```bash
-powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/uninstall.ps1)"
+powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/uninstall.ps1)"          # 기본 정리
+powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/uninstall.ps1)" -Purge   # Claude settings의 dotfiles key 제거
 ```
 
 ## 자동 동기화

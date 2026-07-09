@@ -2,6 +2,21 @@
 $DOTFILES = Split-Path -Parent $MyInvocation.MyCommand.Path
 $HOME_DIR = $env:USERPROFILE
 
+function Test-SameFileContent {
+  param(
+    [Parameter(Mandatory = $true)][string]$First,
+    [Parameter(Mandatory = $true)][string]$Second
+  )
+
+  if ((-not (Test-Path $First)) -or (-not (Test-Path $Second))) {
+    return $false
+  }
+
+  $firstHash = (Get-FileHash -Algorithm SHA256 $First).Hash
+  $secondHash = (Get-FileHash -Algorithm SHA256 $Second).Hash
+  return $firstHash -eq $secondHash
+}
+
 function Merge-JsonObject {
   param(
     [Parameter(Mandatory = $true)]$Target,
@@ -58,7 +73,14 @@ if (Test-Path $targetSettings) {
 # .claude/hooks
 $hooksDir = "$claudeDir\hooks"
 if (-not (Test-Path $hooksDir)) { New-Item -ItemType Directory -Path $hooksDir | Out-Null }
-Copy-Item "$DOTFILES\.claude\hooks\notify.sh" "$hooksDir\notify.sh" -Force
+$sourceHook = "$DOTFILES\.claude\hooks\notify.sh"
+$targetHook = "$hooksDir\notify.sh"
+if ((Test-Path $targetHook) -and (-not (Test-SameFileContent -First $targetHook -Second $sourceHook))) {
+  $backup = "$targetHook.bak.$(Get-Date -Format 'yyyyMMddHHmmss')"
+  Write-Host "Backing up... ($targetHook -> $backup)"
+  Move-Item $targetHook $backup
+}
+Copy-Item $sourceHook $targetHook -Force
 Write-Host ".claude/hooks/notify.sh done"
 
 Write-Host "All done!"

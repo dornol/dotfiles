@@ -1,6 +1,25 @@
 # dotfiles uninstaller for Windows
+param(
+  [switch]$Purge
+)
+
 $DOTFILES = Split-Path -Parent $MyInvocation.MyCommand.Path
 $HOME_DIR = $env:USERPROFILE
+
+function Test-SameFileContent {
+  param(
+    [Parameter(Mandatory = $true)][string]$First,
+    [Parameter(Mandatory = $true)][string]$Second
+  )
+
+  if ((-not (Test-Path $First)) -or (-not (Test-Path $Second))) {
+    return $false
+  }
+
+  $firstHash = (Get-FileHash -Algorithm SHA256 $First).Hash
+  $secondHash = (Get-FileHash -Algorithm SHA256 $Second).Hash
+  return $firstHash -eq $secondHash
+}
 
 function Remove-JsonObjectProperties {
   param(
@@ -45,16 +64,23 @@ function Restore-LatestBackup {
 
 # .gitconfig: dotfiles 사본 제거 후 백업 복원
 $gitconfig = "$HOME_DIR\.gitconfig"
-if (Test-Path $gitconfig) {
+$sourceGitconfig = "$DOTFILES\.gitconfig"
+$restoreGitconfig = $true
+if ((Test-Path $gitconfig) -and (Test-SameFileContent -First $gitconfig -Second $sourceGitconfig)) {
   Remove-Item $gitconfig -Force
   Write-Host ".gitconfig removed"
+} elseif (Test-Path $gitconfig) {
+  $restoreGitconfig = $false
+  Write-Host ".gitconfig preserved (content differs from dotfiles copy)"
 }
-Restore-LatestBackup -Target $gitconfig
+if ($restoreGitconfig) {
+  Restore-LatestBackup -Target $gitconfig
+}
 
-# .claude/settings.json: dotfiles에서 머지된 키만 제거
+# .claude/settings.json: purge에서만 dotfiles에서 머지된 키 제거
 $targetSettings = "$HOME_DIR\.claude\settings.json"
 $sourceSettings = "$DOTFILES\.claude\settings.json"
-if ((Test-Path $targetSettings) -and (Test-Path $sourceSettings)) {
+if ($Purge -and (Test-Path $targetSettings) -and (Test-Path $sourceSettings)) {
   $dotfilesJson = Get-Content $sourceSettings -Raw | ConvertFrom-Json
   $existingJson = Get-Content $targetSettings -Raw | ConvertFrom-Json
   Remove-JsonObjectProperties -Target $existingJson -Source $dotfilesJson
@@ -65,13 +91,17 @@ if ((Test-Path $targetSettings) -and (Test-Path $sourceSettings)) {
     $existingJson | ConvertTo-Json -Depth 10 | Set-Content $targetSettings
     Write-Host ".claude/settings.json: dotfiles keys removed"
   }
+} elseif (Test-Path $targetSettings) {
+  Write-Host ".claude/settings.json preserved (use -Purge to remove dotfiles keys)"
 }
 
-# .claude/hooks/notify.sh
+# .claude/hooks/notify.sh: dotfiles 사본과 같을 때만 제거
 $notifyHook = "$HOME_DIR\.claude\hooks\notify.sh"
-if (Test-Path $notifyHook) {
+if ((Test-Path $notifyHook) -and (Test-SameFileContent -First $notifyHook -Second "$DOTFILES\.claude\hooks\notify.sh")) {
   Remove-Item $notifyHook -Force
   Write-Host ".claude/hooks/notify.sh removed"
+} elseif (Test-Path $notifyHook) {
+  Write-Host ".claude/hooks/notify.sh preserved (content differs from dotfiles copy)"
 }
 
 Write-Host "All done!"
