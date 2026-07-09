@@ -38,7 +38,14 @@ bindkey "^[[1;5C" forward-word      # Ctrl+Right
 bindkey "^[[1;5D" backward-word     # Ctrl+Left
 
 # 자동완성
-autoload -Uz compinit && compinit
+autoload -Uz compinit
+ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump"
+if [ -s "$ZSH_COMPDUMP" ]; then
+  compinit -C -d "$ZSH_COMPDUMP"
+else
+  compinit -d "$ZSH_COMPDUMP"
+fi
+unset ZSH_COMPDUMP
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 
@@ -102,7 +109,7 @@ if command -v bat &>/dev/null; then
 fi
 if command -v fzf &>/dev/null; then
   if fzf --zsh &>/dev/null; then
-    source <(fzf --zsh)
+    source <(fzf --zsh) 2>/dev/null
   else
     # 구버전 fzf 호환
     [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
@@ -116,7 +123,9 @@ ZSH_PLUGIN_DIR="$HOME/.zsh/plugins"
 [ -f "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && source "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # starship 프롬프트
-eval "$(starship init zsh)"
+if command -v starship &>/dev/null; then
+  eval "$(starship init zsh)"
+fi
 
 # dotfiles 자동 동기화 (하루 1회 백그라운드 pull + restow)
 # .zshrc 심볼릭 링크를 따라가서 dotfiles 디렉토리 자동 감지

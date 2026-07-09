@@ -58,6 +58,7 @@ restore_latest_backup() {
 restore_latest_backup "$HOME/.config/nvim"
 restore_latest_backup "$HOME/.wezterm.lua"
 restore_latest_backup "$HOME/.gitconfig"
+restore_latest_backup "$HOME/.zshenv"
 restore_latest_backup "$HOME/.zshrc"
 restore_latest_backup "$HOME/.tmux.conf"
 restore_latest_backup "$HOME/.claude/settings.json"

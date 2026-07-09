@@ -1,3 +1,5 @@
+command_timeout = 100
+
 [username]
 show_always = true
 format = "[$user]($style)@"
