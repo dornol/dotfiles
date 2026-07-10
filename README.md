@@ -10,6 +10,9 @@ cd ~/dotfiles
 bash install.sh
 ```
 
+SDKMAN도 함께 설치되며, Java/Kotlin/Gradle 등의 SDK는 필요할 때 직접 설치함.
+예: `sdk install java`
+
 macOS에서는 다음 설정도 자동 적용됨.
 
 - macOS Terminal / WezTerm 테마: GitHub Light

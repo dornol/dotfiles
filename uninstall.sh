@@ -21,7 +21,7 @@ for arg in "$@"; do
 --purge: 추가로 install.sh가 직접 설치한 도구 제거
          Claude settings의 dotfiles key 제거
          (zsh 플러그인, starship, fzf, delta, bat, fd, rg, eza,
-          zoxide, lazygit, fnm, nvim, ruff)
+          zoxide, lazygit, fnm, SDKMAN, nvim, ruff)
          패키지 매니저로 설치된 stow/zsh/tmux/pipx는 건드리지 않음
 EOF
       exit 0
@@ -103,6 +103,12 @@ if [ "$PURGE" = true ]; then
   rm -f "$HOME/.local/bin/lazygit"
   rm -f "$HOME/.local/bin/fnm"
   rm -rf "$HOME/.local/share/fnm"
+
+  # 이 install.sh가 설치한 SDKMAN만 제거
+  SDKMAN_DIR="${SDKMAN_DIR:-$HOME/.sdkman}"
+  if [ -f "$SDKMAN_DIR/.dotfiles-installed" ]; then
+    rm -rf "$SDKMAN_DIR"
+  fi
 
   # nvim (Linux에서 GitHub 릴리즈로 직접 설치한 경우만)
   case "$OS" in

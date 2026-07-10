@@ -13,6 +13,16 @@ fi
 mkdir -p "$HOME/.local/bin"
 export PATH="$HOME/.local/bin:$PATH"
 
+APT_UPDATED=false
+
+apt_update_once() {
+  if [ "$APT_UPDATED" = false ]; then
+    echo "apt 패키지 목록 업데이트 중..."
+    sudo apt-get update
+    APT_UPDATED=true
+  fi
+}
+
 # git 확인 (필수)
 if ! command -v git &>/dev/null; then
   echo "필요한 프로그램이 없습니다: git"
@@ -24,6 +34,7 @@ pkg_install() {
   case "$OS" in
     Linux)
       if command -v apt-get &>/dev/null; then
+        apt_update_once
         sudo apt-get install -y "$@"
       elif command -v dnf &>/dev/null; then
         sudo dnf install -y "$@"
@@ -98,6 +109,7 @@ if ! command -v cc &>/dev/null && ! command -v gcc &>/dev/null; then
   case "$OS" in
     Linux)
       if command -v apt-get &>/dev/null; then
+        apt_update_once
         sudo apt-get install -y build-essential
       elif command -v dnf &>/dev/null; then
         sudo dnf groupinstall -y "Development Tools"
@@ -260,7 +272,7 @@ if ! command -v rg &>/dev/null; then
         RG_LIBC="musl"
       fi
       RG_TRIPLE="${RG_ARCH}-unknown-linux-${RG_LIBC}"
-      download "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_TRIPLE}.tar.gz" | tar -xz -C /tmp
+      download "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_TRIPLE}.tar.gz" | tar -xz -C /tmp
       mv "/tmp/ripgrep-${RG_VERSION}-${RG_TRIPLE}/rg" "$HOME/.local/bin/rg"
       rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_TRIPLE}"
       ;;
@@ -356,6 +368,16 @@ if command -v fnm &>/dev/null && ! fnm list | grep -q lts; then
   echo "Node.js LTS 설치 중..."
   fnm install --lts
   fnm default lts-latest
+fi
+
+# SDKMAN (JDK/Gradle 등 SDK는 사용자가 필요할 때 설치)
+SDKMAN_DIR="${SDKMAN_DIR:-$HOME/.sdkman}"
+if [ ! -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
+  echo "SDKMAN 설치 중..."
+  pkg_install zip unzip
+  export SDKMAN_DIR
+  download "https://get.sdkman.io?rcupdate=false" | bash
+  touch "$SDKMAN_DIR/.dotfiles-installed"
 fi
 
 # .bashrc에 zsh 자동 전환 추가 (인터랙티브 셸에서만)

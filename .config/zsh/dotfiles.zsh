@@ -99,6 +99,10 @@ if command -v fnm &>/dev/null; then
   eval "$(fnm env --use-on-cd)"
 fi
 
+# SDKMAN (Java/Kotlin/Gradle 등)
+export SDKMAN_DIR="${SDKMAN_DIR:-$HOME/.sdkman}"
+[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
+
 # fzf
 if command -v fd &>/dev/null; then
   export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
