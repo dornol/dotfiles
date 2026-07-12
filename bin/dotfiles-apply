@@ -14,7 +14,7 @@ for arg in "$@"; do
       cat <<EOF
 사용법: bin/dotfiles-apply [--remove] [--purge]
 
-기본:     stow restow + merge-only 설정 적용 + source block 적용
+기본:     stow restow(--no-folding) + merge-only 설정 적용 + source block 적용
 --remove: source block과 dotfiles 관리 링크 제거
 --purge:  --remove와 함께 사용 시 Claude settings의 dotfiles key도 제거
 EOF
@@ -256,7 +256,10 @@ run_stow() {
   local action="$1"
   command -v stow &>/dev/null || return 0
   set +e
-  stow_out=$(stow --dir="$DOTFILES_DIR" --target="$HOME" "$action" . 2>&1)
+  # Keep container directories such as ~/.config real.  If Stow folds the
+  # directory into one symlink, applications can accidentally create local
+  # state and credentials inside the dotfiles repository.
+  stow_out=$(stow --no-folding --dir="$DOTFILES_DIR" --target="$HOME" "$action" . 2>&1)
   stow_exit=$?
   set -e
   if [ -n "$stow_out" ]; then
