@@ -70,22 +70,37 @@ powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/uninstall.
 
 ## 자동 동기화
 
-새 zsh 셸을 열 때마다 마지막 pull로부터 24시간 이상 지났으면 백그라운드로
-`git pull` + `bin/dotfiles-apply`를 자동 실행. 로컬에 커밋되지 않은 변경이 있으면
-충돌 방지를 위해 스킵. 즉시 받고 싶으면:
+셸 시작은 네트워크 접근이나 파일 쓰기를 하지 않습니다. 업데이트는 명시적으로
+실행합니다:
 
 ```bash
 dotfiles-update
 ```
 
-`~/.zshrc`에는 dotfiles source block만 추가되고, 실제 zsh 설정은
-dotfiles 디렉토리의 `.config/zsh/dotfiles.zsh`에서 로드됨. 따라서 Go,
+`~/.zshenv`, `~/.zprofile`, `~/.zshrc`에는 각각 dotfiles source block만
+추가됩니다. `.zshenv`는 IDE/CI에도 필요한 환경변수만, `.zprofile`은 로그인 셸
+설정만, `.zshrc`는 interactive TTY 설정만 로드합니다. 따라서 Go,
 SDKMAN 같은 설치 도구가 `~/.zshrc`에 로컬 설정을 추가해도 repo는 변경되지 않음.
 
 ## 민감한 환경변수
 
-`~/.zshrc.local` 파일에 추가 (git 제외):
+`~/.zshrc.local`은 사람이 사용하는 interactive TTY에서만 읽힙니다. 터미널
+전용 alias와 함수는 이 파일에 추가합니다:
 
 ```bash
-export CLAUDE_SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+alias work='cd ~/work'
 ```
+
+로그인 셸에만 필요한 초기화는 `~/.zprofile.local`에 둡니다. IntelliJ, VS Code,
+AI Agent, CI에서도 필요한 환경변수나 비밀값은 shell startup 파일에 넣지 말고
+IDE/CI secret 설정, OS credential store 또는 Linux `environment.d`를
+사용하세요. 이렇게 하면 non-interactive shell에 임의 코드와 네트워크 초기화가
+섞이지 않습니다.
+
+`bin/dotfiles-apply`는 starship 초기화 코드를
+`${XDG_CACHE_HOME:-~/.cache}/zsh/starship-init.zsh`에 생성합니다. 셸 startup은
+캐시를 읽기만 하며 캐시 파일을 생성하거나 수정하지 않습니다.
+
+fnm은 `.node-version` 또는 `.nvmrc`가 있는 프로젝트에서만 shell integration을
+활성화합니다. 프로젝트 안에서 터미널을 바로 연 경우에는 첫 입력 직전에 한 번
+확인하고, 이후에는 fnm의 디렉터리 변경 hook이 버전을 관리합니다.

@@ -277,6 +277,8 @@ if [ "$MODE" = "remove" ]; then
   remove_dotfiles_link "$HOME/.claude/hooks/notify.sh"
   remove_source_block "$HOME/.zshrc"
   remove_source_block "$HOME/.zshenv"
+  remove_source_block "$HOME/.zprofile"
+  rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/starship-init.zsh"
   run_stow --delete
   exit 0
 fi
@@ -286,3 +288,5 @@ merge_claude_settings
 install_claude_hook
 install_source_block "$HOME/.zshrc" "$DOTFILES_DIR/.config/zsh/dotfiles.zsh"
 install_source_block "$HOME/.zshenv" "$DOTFILES_DIR/.config/zsh/dotfiles.zshenv"
+install_source_block "$HOME/.zprofile" "$DOTFILES_DIR/.config/zsh/dotfiles.zprofile"
+"$DOTFILES_DIR/bin/dotfiles-zsh-cache"

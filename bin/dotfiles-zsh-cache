@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+set -o pipefail
+
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+STARSHIP_CACHE="$CACHE_DIR/starship-init.zsh"
+
+if ! command -v starship &>/dev/null; then
+  exit 0
+fi
+
+mkdir -p "$CACHE_DIR"
+tmp=$(mktemp "$CACHE_DIR/starship-init.XXXXXX")
+trap 'rm -f "$tmp"' EXIT
+starship init zsh > "$tmp"
+chmod 600 "$tmp"
+mv "$tmp" "$STARSHIP_CACHE"
+trap - EXIT

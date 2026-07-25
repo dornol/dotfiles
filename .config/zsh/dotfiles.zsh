@@ -1,222 +1,156 @@
-# PATH
-export PATH="$HOME/.local/bin:$PATH"
+# IDE environment probes and `zsh -c` stop before terminal setup or commands.
+[[ -o interactive ]] || return
+[[ -t 0 && -t 1 ]] || return
 
-# 기본 에디터
-export EDITOR=nvim
-export VISUAL=nvim
-
-case "$(uname -s)" in
-  Linux)
-    export PATH="$PATH:/opt/nvim-linux-x86_64/bin"
-    ;;
-  Darwin)
-    # macOS는 brew로 설치된 경로 사용
-    export PATH="$PATH:/opt/homebrew/bin"
-    ;;
-esac
-
-# 히스토리
 HISTSIZE=10000
-HISTFILE=~/.zsh_history
+HISTFILE="$HOME/.zsh_history"
 SAVEHIST=$HISTSIZE
-setopt HIST_IGNORE_DUPS
-setopt HIST_IGNORE_SPACE
-setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE SHARE_HISTORY
 
-# 키 바인딩
 autoload -Uz edit-command-line
 zle -N edit-command-line
-bindkey '^E^E' edit-command-line    # Ctrl+E Ctrl+E → 현재 명령어를 nvim에서 편집
-bindkey "^[[H"  beginning-of-line   # Home
-bindkey "^[[F"  end-of-line         # End
-bindkey "^[[1~" beginning-of-line   # Home (rxvt/일부 리눅스)
-bindkey "^[[4~" end-of-line         # End  (rxvt/일부 리눅스)
-bindkey "^[OH"  beginning-of-line   # Home (tmux/screen)
-bindkey "^[OF"  end-of-line         # End  (tmux/screen)
-bindkey "^[[3~" delete-char         # Delete
-bindkey "^[[1;5C" forward-word      # Ctrl+Right
-bindkey "^[[1;5D" backward-word     # Ctrl+Left
+bindkey '^E^E' edit-command-line
+bindkey '^[[H' beginning-of-line
+bindkey '^[[F' end-of-line
+bindkey '^[[1~' beginning-of-line
+bindkey '^[[4~' end-of-line
+bindkey '^[OH' beginning-of-line
+bindkey '^[OF' end-of-line
+bindkey '^[[3~' delete-char
+bindkey '^[[1;5C' forward-word
+bindkey '^[[1;5D' backward-word
 
-# 자동완성
-autoload -Uz compinit
-ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump"
-if [ -s "$ZSH_COMPDUMP" ]; then
-  compinit -C -d "$ZSH_COMPDUMP"
-else
-  compinit -d "$ZSH_COMPDUMP"
-fi
-unset ZSH_COMPDUMP
-zstyle ':completion:*' menu select
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+# Initialize completion on the first Tab.
+__dotfiles_init_completion() {
+  autoload -Uz compinit
+  local compdump="${ZDOTDIR:-$HOME}/.zcompdump"
+  if [[ -s "$compdump" ]]; then
+    compinit -C -d "$compdump" || return
+  else
+    compinit -d "$compdump" || return
+  fi
+  zstyle ':completion:*' menu select
+  zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+  bindkey '^I' expand-or-complete
+  unfunction __dotfiles_init_completion
+  zle expand-or-complete
+}
+zle -N __dotfiles_init_completion
+bindkey '^I' __dotfiles_init_completion
 
-# alias
-if command -v eza &>/dev/null; then
-  alias ls='eza'
-  alias ll='eza -alF --git'
-  alias la='eza -a'
-  alias l='eza -F'
-  alias lt='eza --tree'
+if (( $+commands[eza] )); then
+  alias ls='eza' ll='eza -alF --git' la='eza -a' l='eza -F' lt='eza --tree'
 else
-  alias ls='ls --color=auto'
-  alias ll='ls -alF'
-  alias la='ls -A'
-  alias l='ls -CF'
+  alias ls='ls --color=auto' ll='ls -alF' la='ls -A' l='ls -CF'
 fi
 alias grep='grep --color=auto'
-if command -v nvim &>/dev/null; then
-  alias vi='nvim'
-  alias vim='nvim'
-fi
-if command -v lazygit &>/dev/null; then
-  alias lg='lazygit'
-fi
+(( $+commands[nvim] )) && alias vi='nvim' vim='nvim'
+(( $+commands[lazygit] )) && alias lg='lazygit'
 
 t() {
   local session="${1:-main}"
   tmux new -A -s "$session"
 }
 
-# docker alias
-alias d='docker'
-alias dps='docker ps'
-alias dpsa='docker ps -a'
-alias di='docker images'
-alias dex='docker exec -it'
-alias dlogs='docker logs -f'
-alias drm='docker rm'
-alias drmi='docker rmi'
-alias dstop='docker stop'
+alias d='docker' dps='docker ps' dpsa='docker ps -a' di='docker images'
+alias dex='docker exec -it' dlogs='docker logs -f' drm='docker rm'
+alias drmi='docker rmi' dstop='docker stop'
+alias dc='docker compose' dcu='docker compose up -d' dcd='docker compose down'
+alias dcl='docker compose logs -f' dcr='docker compose restart'
 
-# docker compose alias
-alias dc='docker compose'
-alias dcu='docker compose up -d'
-alias dcd='docker compose down'
-alias dcl='docker compose logs -f'
-alias dcr='docker compose restart'
+# Node is already on the static default-version PATH; fnm hooks load on demand.
+__dotfiles_init_fnm() {
+  (( $+commands[fnm] )) || return 1
+  unfunction fnm 2>/dev/null
+  eval "$(command fnm env --use-on-cd)"
+}
+fnm() {
+  __dotfiles_init_fnm || return
+  fnm "$@"
+}
+autoload -Uz add-zsh-hook add-zle-hook-widget
+__dotfiles_fnm_chpwd() {
+  local dir="$PWD"
+  while [[ "$dir" != / ]]; do
+    if [[ -r "$dir/.node-version" || -r "$dir/.nvmrc" ]]; then
+      __dotfiles_init_fnm &&
+        add-zsh-hook -d chpwd __dotfiles_fnm_chpwd
+      return
+    fi
+    dir="${dir:h}"
+  done
+}
+add-zsh-hook -d chpwd __dotfiles_fnm_chpwd 2>/dev/null
+add-zsh-hook chpwd __dotfiles_fnm_chpwd
 
-# fnm (Node.js)
-if command -v fnm &>/dev/null; then
-  eval "$(fnm env --use-on-cd)"
+# chpwd does not fire when a terminal starts inside a Node project. Check the
+# initial working directory once, when ZLE is first entered. The check itself
+# uses only zsh file tests; fnm runs only if a version marker is found.
+__dotfiles_fnm_initial_pwd() {
+  add-zle-hook-widget -d zle-line-init __dotfiles_fnm_initial_pwd
+  __dotfiles_fnm_chpwd
+}
+add-zle-hook-widget -d zle-line-init __dotfiles_fnm_initial_pwd 2>/dev/null
+add-zle-hook-widget zle-line-init __dotfiles_fnm_initial_pwd
+
+# SDKMAN is large; source it only on the first sdk call.
+sdk() {
+  unfunction sdk
+  local init="${SDKMAN_DIR:-$HOME/.sdkman}/bin/sdkman-init.sh"
+  [[ -s "$init" ]] || return 127
+  source "$init"
+  sdk "$@"
+}
+
+# Generate fzf shell integration only on first Ctrl-R/Ctrl-T.
+if [[ -z "${__DOTFILES_FZF_LOADED:-}" ]]; then
+  __dotfiles_init_fzf() {
+    (( $+commands[fzf] )) || return 1
+    local init
+    if init="$(fzf --zsh 2>/dev/null)"; then
+      source <(print -r -- "$init")
+    else
+      local legacy_dir=/usr/share/doc/fzf/examples
+      [[ -r "$legacy_dir/key-bindings.zsh" ]] &&
+        source "$legacy_dir/key-bindings.zsh"
+      [[ -r "$legacy_dir/completion.zsh" ]] &&
+        source "$legacy_dir/completion.zsh"
+    fi
+    typeset -g __DOTFILES_FZF_LOADED=1
+    unfunction __dotfiles_init_fzf
+  }
+  __dotfiles_fzf_widget() {
+    local key="$KEYS"
+    __dotfiles_init_fzf || return
+    zle -U "$key"
+  }
+  zle -N __dotfiles_fzf_widget
+  bindkey '^R' __dotfiles_fzf_widget
+  bindkey '^T' __dotfiles_fzf_widget
 fi
 
-# SDKMAN (Java/Kotlin/Gradle 등)
-export SDKMAN_DIR="${SDKMAN_DIR:-$HOME/.sdkman}"
-[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
-
-# fzf
-if command -v fd &>/dev/null; then
+(( $+commands[fd] )) && {
   export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-fi
-if command -v bat &>/dev/null; then
+}
+(( $+commands[bat] )) &&
   export FZF_DEFAULT_OPTS="--preview 'bat --color=always --line-range :100 {}'"
-fi
-if command -v fzf &>/dev/null; then
-  if __FZF_ZSH_INIT="$(fzf --zsh 2>/dev/null)"; then
-    source <(printf '%s\n' "$__FZF_ZSH_INIT") 2>/dev/null
-  else
-    # 구버전 fzf 호환
-    [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
-    [ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
-  fi
-  unset __FZF_ZSH_INIT
-fi
 
-# 플러그인
-ZSH_PLUGIN_DIR="$HOME/.zsh/plugins"
-[ -f "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && source "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
-[ -f "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && source "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-
-# starship 프롬프트
-if command -v starship &>/dev/null; then
-  eval "$(starship init zsh)"
-fi
-
-# dotfiles 자동 동기화 (하루 1회 백그라운드 pull + apply)
-# source된 파일 위치에서 dotfiles git 루트 자동 감지
-__DOTFILES_SOURCE="${${(%):-%x}:A}"
-__DOTFILES_DIR="${__DOTFILES_SOURCE:h}"
-while [ "$__DOTFILES_DIR" != "/" ] && [ ! -d "$__DOTFILES_DIR/.git" ]; do
-  __DOTFILES_DIR="${__DOTFILES_DIR:h}"
-done
-unset __DOTFILES_SOURCE
-__DOTFILES_LAST_PULL="$HOME/.cache/dotfiles-last-pull"
-__DOTFILES_LAST_ATTEMPT="$HOME/.cache/dotfiles-last-attempt"
-__DOTFILES_LOG="$HOME/.cache/dotfiles-update.log"
-
-__dotfiles_log() {
-  mkdir -p "$(dirname "$__DOTFILES_LOG")"
-  printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$__DOTFILES_LOG"
+# Parse ZLE plugins when the line editor is first entered, after the prompt is
+# already visible. Syntax highlighting remains last, as required by the plugin.
+__dotfiles_load_zle_plugins() {
+  add-zle-hook-widget -d zle-line-init __dotfiles_load_zle_plugins
+  [[ -n "${__DOTFILES_ZLE_PLUGINS_LOADED:-}" ]] && return
+  local plugin_dir="$HOME/.zsh/plugins"
+  [[ -r "$plugin_dir/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] &&
+    source "$plugin_dir/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  [[ -r "$plugin_dir/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] &&
+    source "$plugin_dir/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  typeset -g __DOTFILES_ZLE_PLUGINS_LOADED=1
 }
+add-zle-hook-widget -d zle-line-init __dotfiles_load_zle_plugins 2>/dev/null
+add-zle-hook-widget zle-line-init __dotfiles_load_zle_plugins
 
-dotfiles-update() {
-  if [ ! -d "$__DOTFILES_DIR/.git" ]; then
-    echo "dotfiles 디렉토리가 없거나 git 저장소가 아닙니다: $__DOTFILES_DIR"
-    __dotfiles_log "manual: not a git repo: $__DOTFILES_DIR"
-    return 1
-  fi
-  echo "dotfiles pull 중..."
-  if ! git -C "$__DOTFILES_DIR" pull --ff-only; then
-    echo "pull 실패 — 로컬 변경/충돌 또는 네트워크 확인"
-    __dotfiles_log "manual: pull failed"
-    return 1
-  fi
-  if [ -x "$__DOTFILES_DIR/bin/dotfiles-apply" ]; then
-    if ! bash "$__DOTFILES_DIR/bin/dotfiles-apply"; then
-      __dotfiles_log "manual: apply failed"
-      return 1
-    fi
-  fi
-  mkdir -p "$(dirname "$__DOTFILES_LAST_PULL")"
-  date +%s > "$__DOTFILES_LAST_PULL"
-  __dotfiles_log "manual: updated"
-  echo "완료. 새 셸 열거나 'source ~/.zshrc'로 적용."
-}
-
-if [ -d "$__DOTFILES_DIR/.git" ]; then
-  __now=$(date +%s)
-  __last=$(cat "$__DOTFILES_LAST_PULL" 2>/dev/null || echo 0)
-  __last_attempt=$(cat "$__DOTFILES_LAST_ATTEMPT" 2>/dev/null || echo 0)
-  if [ $((__now - __last)) -gt 86400 ] && [ $((__now - __last_attempt)) -gt 3600 ]; then
-    mkdir -p "$(dirname "$__DOTFILES_LAST_ATTEMPT")"
-    echo "$__now" > "$__DOTFILES_LAST_ATTEMPT"
-    {
-      # 로컬 변경 있으면 충돌 위험으로 스킵
-      if [ -z "$(git -C "$__DOTFILES_DIR" status --porcelain 2>/dev/null)" ]; then
-        if git -C "$__DOTFILES_DIR" pull --ff-only --quiet 2>/dev/null; then
-          if [ -x "$__DOTFILES_DIR/bin/dotfiles-apply" ]; then
-            if bash "$__DOTFILES_DIR/bin/dotfiles-apply" &>/dev/null; then
-              date +%s > "$__DOTFILES_LAST_PULL"
-              __dotfiles_log "auto: updated"
-            else
-              __dotfiles_log "auto: apply failed"
-            fi
-          else
-            date +%s > "$__DOTFILES_LAST_PULL"
-            __dotfiles_log "auto: pulled, apply missing"
-          fi
-        else
-          __dotfiles_log "auto: pull failed"
-        fi
-      else
-        __dotfiles_log "auto: skipped, local changes"
-      fi
-    } &!
-  fi
-  unset __now __last __last_attempt
-fi
-
-# zoxide (스마트 cd)
-if command -v zoxide &>/dev/null; then
-  eval "$(zoxide init zsh)"
-fi
-
-# 터미널 리사이즈 시 prompt 강제 재갱신 (줄바꿈 깨짐 방지)
-TRAPWINCH() {
-  COLUMNS=$(tput cols)
-  LINES=$(tput lines)
-  zle && zle reset-prompt
-}
-
-# 로컬 전용 설정 (git에 올라가지 않음)
-[ -f ~/.zshrc.local ] && source ~/.zshrc.local
+source "${${(%):-%x}:A:h}/prompt.zsh"
+source "${${(%):-%x}:A:h}/dotfiles-update.zsh"
+[[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
