@@ -1,6 +1,7 @@
 # JetBrains shell environment readers allocate a pseudo-TTY, so a TTY check
 # alone is insufficient. They need exports from .zshenv, but never terminal UI.
 [[ -n "${INTELLIJ_ENVIRONMENT_READER:-}" ]] && return
+[[ -n "${__DOTFILES_IJENT_ENV_READER:-}" ]] && return
 
 # Other IDE environment probes and `zsh -c` stop before terminal setup/commands.
 [[ -o interactive ]] || return

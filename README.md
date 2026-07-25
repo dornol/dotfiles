@@ -108,4 +108,9 @@ fnm은 `.node-version` 또는 `.nvmrc`가 있는 프로젝트에서만 shell int
 JetBrains의 WSL/IJent 환경 수집은 pseudo-TTY를 사용하므로 일반 TTY 검사만으로는
 터미널 세션과 구분할 수 없습니다. `INTELLIJ_ENVIRONMENT_READER`가 설정된 셸은
 `.zshenv`의 export만 유지하고 `.zprofile.local`, prompt, ZLE 플러그인 및 기타
-interactive 초기화를 건너뜁니다.
+interactive 초기화를 건너뜁니다. 해당 변수를 설정하지 않는 IJent 2026.2
+환경 리더는 `.zshenv`에서 IJent 임시 작업 디렉터리와 `ijent` 부모 프로세스의
+조합으로 식별합니다. 부모 확인에는 zsh 내장 `read`만 사용합니다. 이 버전의
+IJent가 환경 조회 명령을 보내지 않고 기본 zsh prompt에서 대기하는 경우에는
+필수 export 구성이 끝난 직후 해당 probe shell만 종료하여 IDE가 30초 동안
+멈추는 것을 방지합니다.
