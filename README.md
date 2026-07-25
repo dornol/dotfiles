@@ -104,3 +104,8 @@ IDE/CI secret 설정, OS credential store 또는 Linux `environment.d`를
 fnm은 `.node-version` 또는 `.nvmrc`가 있는 프로젝트에서만 shell integration을
 활성화합니다. 프로젝트 안에서 터미널을 바로 연 경우에는 첫 입력 직전에 한 번
 확인하고, 이후에는 fnm의 디렉터리 변경 hook이 버전을 관리합니다.
+
+JetBrains의 WSL/IJent 환경 수집은 pseudo-TTY를 사용하므로 일반 TTY 검사만으로는
+터미널 세션과 구분할 수 없습니다. `INTELLIJ_ENVIRONMENT_READER`가 설정된 셸은
+`.zshenv`의 export만 유지하고 `.zprofile.local`, prompt, ZLE 플러그인 및 기타
+interactive 초기화를 건너뜁니다.
