@@ -1,4 +1,5 @@
 command_timeout = 100
+scan_timeout = 1000
 
 [username]
 show_always = true
@@ -18,11 +19,11 @@ detect_folders = []
 
 [docker_context]
 format = " [$context]($style)"
-only_with_files = false
+only_with_files = true
 
 [kubernetes]
-disabled = false
+disabled = true
 format = " [$symbol$context( \\($namespace\\))]($style)"
 
 [git_status]
-disabled = true
+disabled = false
