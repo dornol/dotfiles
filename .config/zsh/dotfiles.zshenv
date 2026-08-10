@@ -40,12 +40,10 @@ case "$OSTYPE" in
 esac
 export PATH
 
-# IntelliJ IDEA 2026.2's IJent WSL environment reader can leave its
-# LoginInteractive zsh waiting at a prompt instead of sending the environment
-# query. Returning from .zprofile/.zshrc is not enough because the shell then
-# waits forever. All required exports are ready now, so terminate only this
-# narrowly identified probe before it can block the IDE for 30 seconds.
-if [[ -n "${__DOTFILES_IJENT_ENV_READER:-}" ]]; then
-  unset __DOTFILES_IJENT_ENV_READER
-  exit 0
-fi
+# NOTE: previously this block called `exit 0` here to protect IJent's
+# LoginInteractive probe from the slow parts of dotfiles.zsh. That killed the
+# shell before IJent could ever send its environment query over the pty
+# (confirmed via debug trace: "stream terminated before the boundary
+# appeared"). .zprofile/.zshrc now `return` on __DOTFILES_IJENT_ENV_READER
+# instead, which skips the slow setup but keeps the shell alive to answer
+# IJent's query normally. Do not exit here.
