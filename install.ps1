@@ -42,15 +42,18 @@ function Merge-JsonObject {
   return $Target
 }
 
-# .gitconfig
+# .gitconfig: keep the machine-local file writable so Git/gh can update it.
 $gitconfig = "$HOME_DIR\.gitconfig"
-if ((Test-Path $gitconfig) -and (-not (Get-Item $gitconfig).LinkType)) {
-  $backup = "$gitconfig.bak.$(Get-Date -Format 'yyyyMMddHHmmss')"
-  Write-Host "Backing up... ($gitconfig -> $backup)"
-  Move-Item $gitconfig $backup
+$gitconfigInclude = "path = $($DOTFILES -replace '\\', '/')/.gitconfig"
+$gitconfigContent = if (Test-Path $gitconfig) { Get-Content $gitconfig -Raw } else { "" }
+if ($gitconfigContent -notmatch [regex]::Escape($gitconfigInclude)) {
+  if ($gitconfigContent -and -not $gitconfigContent.EndsWith("`n")) { Add-Content $gitconfig "" }
+  Add-Content $gitconfig "# >>> dotfiles gitconfig >>>"
+  Add-Content $gitconfig "[include]"
+  Add-Content $gitconfig "    $gitconfigInclude"
+  Add-Content $gitconfig "# <<< dotfiles gitconfig <<<"
 }
-Copy-Item "$DOTFILES\.gitconfig" $gitconfig
-Write-Host ".gitconfig done"
+Write-Host ".gitconfig include done"
 
 # .claude/settings.json (merge)
 $claudeDir = "$HOME_DIR\.claude"

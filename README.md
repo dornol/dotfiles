@@ -35,7 +35,11 @@ WSL 터미널에서 실행:
 powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/install.ps1)"
 ```
 
-`.gitconfig`, `.claude/settings.json`, `.claude/hooks/notify.sh` 적용됨 (MCP 설정은 유지)
+`.gitconfig`의 공통 설정과 `.claude/settings.json`, `.claude/hooks/notify.sh` 적용됨 (MCP 설정은 유지)
+
+Git 설정은 `~/.gitconfig`에 dotfiles의 공통 설정을 include합니다. `gh auth setup-git`나
+`safe.directory`처럼 컴퓨터별로 자동 추가되는 설정은 추적하지 않는 `~/.gitconfig.local`에
+저장되므로 dotfiles 저장소가 자동 변경되지 않습니다.
 
 WSL에서 `install.sh` 실행 시 Windows Terminal 테마/폰트도 자동 적용됨.
 

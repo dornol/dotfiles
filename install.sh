@@ -398,6 +398,13 @@ fi
 backup_if_exists() {
   local target="$1"
   local real
+  # ~/.gitconfig is a writable local wrapper.  Keep it in place so Git and
+  # GitHub CLI can add machine-specific settings without touching dotfiles.
+  if [[ "$target" == "$HOME/.gitconfig" ]] &&
+     [ -f "$target" ] &&
+     grep -Fq '# >>> dotfiles gitconfig >>>' "$target"; then
+    return
+  fi
   real=$(realpath "$target" 2>/dev/null || echo "")
   # dotfiles 디렉토리 안의 파일이면 스킵
   if [[ "$real" == "$DOTFILES_DIR"* ]]; then
