@@ -6,6 +6,22 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 IS_WSL=false
+SET_DEFAULT_SHELL=false
+for arg in "$@"; do
+  case "$arg" in
+    --set-default-shell) SET_DEFAULT_SHELL=true ;;
+    -h|--help)
+      echo "사용법: bash install.sh [--set-default-shell]"
+      echo "  --set-default-shell  사용자 기본 셸을 zsh로 변경"
+      exit 0
+      ;;
+    *)
+      echo "알 수 없는 옵션: $arg" >&2
+      echo "사용법: bash install.sh [--set-default-shell]" >&2
+      exit 2
+      ;;
+  esac
+done
 if [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null; then
   IS_WSL=true
 fi
@@ -368,6 +384,10 @@ if command -v fnm &>/dev/null && ! fnm list | grep -q lts; then
   echo "Node.js LTS 설치 중..."
   fnm install --lts
   fnm default lts-latest
+fi
+
+if [ "$SET_DEFAULT_SHELL" = true ]; then
+  bash "$DOTFILES_DIR/bin/dotfiles-use-zsh"
 fi
 
 # SDKMAN (JDK/Gradle 등 SDK는 사용자가 필요할 때 설치)

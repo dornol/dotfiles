@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+zsh_path=$(command -v zsh || true)
+if [[ -z "$zsh_path" ]]; then
+  echo "zsh를 찾을 수 없습니다." >&2
+  exit 1
+fi
+
+current_shell=$(getent passwd "${USER:?}" 2>/dev/null | cut -d: -f7 || true)
+if [[ "$current_shell" == "$zsh_path" ]]; then
+  echo "기본 셸이 이미 $zsh_path 입니다."
+  exit 0
+fi
+
+if ! command -v chsh >/dev/null 2>&1; then
+  echo "chsh를 찾을 수 없습니다." >&2
+  exit 1
+fi
+
+echo "기본 셸을 $zsh_path 로 변경합니다."
+chsh -s "$zsh_path"
+echo "완료했습니다. WSL과 IntelliJ를 완전히 재시작하세요."
