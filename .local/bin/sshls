@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+사용법: sshls [--config FILE] [--list]
+
+SSH config의 Host 목록을 표로 보여주고, 선택한 호스트에 접속합니다.
+  --config FILE  사용할 SSH config 경로 (기본: ~/.ssh/config)
+  --list         목록만 출력하고 접속하지 않음
+EOF
+}
+
+config_file="${HOME}/.ssh/config"
+list_only=false
+
+while (($#)); do
+  case "$1" in
+    -c|--config)
+      (($# >= 2)) || { echo "--config에는 파일 경로가 필요합니다." >&2; exit 2; }
+      config_file=$2
+      shift 2
+      ;;
+    --list)
+      list_only=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "알 수 없는 옵션: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ ! -r "$config_file" ]]; then
+  echo "SSH config를 읽을 수 없습니다: $config_file" >&2
+  exit 1
+fi
+
+declare -A seen_files=()
+declare -A seen_hosts=()
+
+expand_include() {
+  local pattern=$1
+  local base_dir=$2
+  local expanded
+  local -a matches=()
+
+  case "$pattern" in
+    ~/*) expanded="$HOME/${pattern#~/}" ;;
+    /*) expanded=$pattern ;;
+    *) expanded="$base_dir/$pattern" ;;
+  esac
+
+  # shellcheck disable=SC2206
+  matches=( $expanded )
+  ((${#matches[@]})) || return 0
+  printf '%s\n' "${matches[@]}"
+}
+
+collect_config() {
+  local file=$1
+  local canonical
+  local dir
+  local line keyword rest alias include_file
+  local -a include_patterns=()
+
+  [[ -r "$file" ]] || return 0
+  canonical=$(readlink -f "$file" 2>/dev/null || printf '%s' "$file")
+  [[ -n "${seen_files[$canonical]+x}" ]] && return 0
+  seen_files[$canonical]=1
+  dir=$(cd "$(dirname "$file")" && pwd)
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    read -r keyword rest <<< "$line"
+
+    case "${keyword,,}" in
+      host)
+        for alias in $rest; do
+          alias=${alias#\"}; alias=${alias%\"}
+          alias=${alias#\'}; alias=${alias%\'}
+          [[ -z "$alias" || "$alias" == *'*'* || "$alias" == *'?'* || "$alias" == '!'* ]] && continue
+          seen_hosts[$alias]=1
+        done
+        ;;
+      include)
+        read -ra include_patterns <<< "$rest"
+        for include_file in "${include_patterns[@]}"; do
+          while IFS= read -r expanded_file; do
+            collect_config "$expanded_file"
+          done < <(expand_include "$include_file" "$dir")
+        done
+        ;;
+    esac
+  done < "$file"
+}
+
+collect_config "$config_file"
+
+mapfile -t hosts < <(printf '%s\n' "${!seen_hosts[@]}" | LC_ALL=C sort -f)
+((${#hosts[@]})) || { echo "SSH Host 항목을 찾지 못했습니다." >&2; exit 1; }
+
+declare -a rows=()
+for host in "${hosts[@]}"; do
+  details=$(ssh -F "$config_file" -G "$host" 2>/dev/null || true)
+  [[ -n "$details" ]] || continue
+  hostname=$(awk '$1 == "hostname" { print $2; exit }' <<< "$details")
+  user=$(awk '$1 == "user" { print $2; exit }' <<< "$details")
+  port=$(awk '$1 == "port" { print $2; exit }' <<< "$details")
+  proxyjump=$(awk '$1 == "proxyjump" { print $2; exit }' <<< "$details")
+  proxycommand=$(awk '$1 == "proxycommand" { $1=""; sub(/^ /, ""); print; exit }' <<< "$details")
+  [[ -n "$proxyjump" && "$proxyjump" != "none" ]] || proxyjump="-"
+  [[ -n "$proxycommand" && "$proxycommand" != "none" ]] || proxycommand="-"
+  rows+=("$host"$'\t'"${hostname:--}"$'\t'"${user:--}"$'\t'"${port:--}"$'\t'"$proxyjump"$'\t'"$proxycommand")
+done
+
+((${#rows[@]})) || { echo "실제 SSH 설정을 확인할 수 있는 Host가 없습니다." >&2; exit 1; }
+
+header=$'NAME\tHOSTNAME\tUSER\tPORT\tPROXYJUMP\tPROXYCOMMAND'
+table=$(printf '%s\n' "$header" "${rows[@]}" | column -t -s $'\t' 2>/dev/null || printf '%s\n' "$header" "${rows[@]}")
+
+if $list_only; then
+  printf '%s\n' "$table"
+  exit 0
+fi
+
+if command -v fzf >/dev/null 2>&1; then
+  selected=$(printf '%s\n' "$table" | fzf --header-lines=1 --no-multi --no-preview --height=80% --layout=reverse --border --prompt='SSH > ' || true)
+  [[ -n "$selected" ]] || exit 0
+  selected_host=${selected%%[[:space:]]*}
+else
+  printf '%s\n\n' "$table"
+  select selected_host in "${hosts[@]}"; do
+    [[ -n "${selected_host:-}" ]] && break
+    echo "잘못된 선택입니다." >&2
+  done
+fi
+
+exec ssh "$selected_host"

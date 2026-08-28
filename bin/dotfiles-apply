@@ -187,6 +187,40 @@ remove_dotfiles_link() {
   fi
 }
 
+install_local_bin_scripts() {
+  local source_dir="$DOTFILES_DIR/.local/bin"
+  local target_dir="$HOME/.local/bin"
+  local source target real
+  [ -d "$source_dir" ] || return 0
+  mkdir -p "$target_dir"
+
+  for source in "$source_dir"/*; do
+    [ -f "$source" ] || continue
+    target="$target_dir/${source##*/}"
+    if [ -e "$target" ] || [ -L "$target" ]; then
+      real=$(realpath "$target" 2>/dev/null || echo "")
+      if [ "$real" != "$source" ]; then
+        echo "기존 파일을 보존하고 건너뜀: $target" >&2
+        continue
+      fi
+      continue
+    fi
+    ln -s "$source" "$target"
+  done
+}
+
+remove_local_bin_scripts() {
+  local source_dir="$DOTFILES_DIR/.local/bin"
+  local source target
+  [ -d "$source_dir" ] || return 0
+
+  for source in "$source_dir"/*; do
+    [ -f "$source" ] || continue
+    target="$HOME/.local/bin/${source##*/}"
+    remove_dotfiles_link "$target"
+  done
+}
+
 install_gitconfig_wrapper() {
   local target="$HOME/.gitconfig"
   local source="$DOTFILES_DIR/.gitconfig"
@@ -336,12 +370,14 @@ if [ "$MODE" = "remove" ]; then
   remove_source_block "$HOME/.zshrc"
   remove_source_block "$HOME/.zshenv"
   remove_source_block "$HOME/.zprofile"
+  remove_local_bin_scripts
   rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/starship-init.zsh"
   run_stow --delete
   exit 0
 fi
 
 run_stow --restow
+install_local_bin_scripts
 install_gitconfig_wrapper
 merge_claude_settings
 install_claude_hook
