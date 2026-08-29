@@ -15,8 +15,11 @@ fi
 typeset -g skip_global_compinit=1
 
 # IJent 2026.2 does not export INTELLIJ_ENVIRONMENT_READER. Detect its login
-# environment shell at the earliest startup stage. `read` is a zsh builtin, so
-# this performs no subprocess or external command execution.
+# environment shell at the earliest startup stage. IJent's environment probe
+# runs from its temporary server directory; regular IntelliJ terminal shells
+# can also have an `ijent` parent, so keep the directory guard to avoid
+# disabling the terminal prompt. `read` is a zsh builtin, so this performs no
+# subprocess or external command execution.
 if [[ "$PWD" == "${TMPDIR:-/tmp}"/tmp.* && -r "/proc/$PPID/comm" ]]; then
   IFS= read -r __dotfiles_parent_comm < "/proc/$PPID/comm"
   if [[ "$__dotfiles_parent_comm" == ijent ]]; then
