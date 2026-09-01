@@ -52,15 +52,3 @@ map("n", "<M-m>", function()
     vim.notify("Mouse: ON")
   end
 end, { desc = "Toggle mouse" })
-
-
--- Harpoon
-local ok, harpoon = pcall(require, "harpoon")
-if ok then
-  map("n", "<leader>a", function() harpoon:list():add() end, { desc = "Harpoon Add" })
-  map("n", "<C-e>", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end, { desc = "Harpoon Menu" })
-  map("n", "<C-1>", function() harpoon:list():select(1) end, { desc = "Harpoon 1" })
-  map("n", "<C-2>", function() harpoon:list():select(2) end, { desc = "Harpoon 2" })
-  map("n", "<C-3>", function() harpoon:list():select(3) end, { desc = "Harpoon 3" })
-  map("n", "<C-4>", function() harpoon:list():select(4) end, { desc = "Harpoon 4" })
-end

@@ -58,7 +58,14 @@ return {
             vim.list_extend(config.settings.json.schemas, require("schemastore").json.schemas())
           end,
         },
+        marksman = {},
       },
+    },
+  },
+  {
+    "mason-org/mason.nvim",
+    opts = {
+      ensure_installed = { "marksman" },
     },
   },
 }
