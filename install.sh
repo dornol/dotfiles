@@ -10,6 +10,11 @@ if [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/nu
   IS_WSL=true
 fi
 
+UPDATE_NVIM=false
+if [ "${1:-}" = "--update-nvim" ]; then
+  UPDATE_NVIM=true
+fi
+
 mkdir -p "$HOME/.local/bin"
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -125,10 +130,10 @@ fi
 
 # nvim 설치 (GitHub에서 최신 버전)
 NVIM_INSTALLED=false
-if command -v nvim &>/dev/null; then
+if command -v nvim &>/dev/null && [ "$UPDATE_NVIM" = false ]; then
   NVIM_INSTALLED=true
 else
-  echo "nvim 설치 중..."
+  [ "$UPDATE_NVIM" = true ] && echo "nvim 업데이트 중..." || echo "nvim 설치 중..."
   case "$OS" in
     Linux)
       NVIM_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x86_64")
@@ -137,13 +142,20 @@ else
       if [ "${GLIBC_MINOR:-0}" -lt 29 ] 2>/dev/null; then
         echo "GLIBC $GLIBC_VER — nvim 최신 버전 미지원, 건너뜀"
       else
+        if [ "$UPDATE_NVIM" = true ]; then
+          sudo rm -rf "/opt/nvim-linux-${NVIM_ARCH}"
+        fi
         download "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" | sudo tar -xz -C /opt
         sudo ln -sf "/opt/nvim-linux-${NVIM_ARCH}/bin/nvim" /usr/local/bin/nvim
         NVIM_INSTALLED=true
       fi
       ;;
     Darwin)
-      brew install neovim
+      if [ "$UPDATE_NVIM" = true ]; then
+        brew upgrade neovim
+      else
+        brew install neovim
+      fi
       NVIM_INSTALLED=true
       ;;
   esac
