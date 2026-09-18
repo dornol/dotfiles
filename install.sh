@@ -15,8 +15,21 @@ if [ "${1:-}" = "--update-nvim" ]; then
   UPDATE_NVIM=true
 fi
 
+case "$OS:$ARCH" in
+  Linux:x86_64|Linux:aarch64|Darwin:x86_64|Darwin:arm64) ;;
+  *)
+    echo "지원하지 않는 플랫폼입니다: $OS/$ARCH" >&2
+    exit 1
+    ;;
+esac
+
+umask 077
+
 mkdir -p "$HOME/.local/bin"
 export PATH="$HOME/.local/bin:$PATH"
+
+INSTALL_TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-install.XXXXXX")
+trap 'rm -rf "$INSTALL_TMP_DIR"' EXIT
 
 APT_UPDATED=false
 
@@ -58,7 +71,8 @@ github_latest_tag() {
   local repo="$1"
   local response
   local tag
-  if ! response=$(curl -fsSL -H 'User-Agent: dotfiles' "https://api.github.com/repos/$repo/releases/latest"); then
+  if ! response=$(curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+    -H 'User-Agent: dotfiles' "https://api.github.com/repos/$repo/releases/latest"); then
     echo "GitHub 릴리스 정보를 가져오지 못했습니다: $repo" >&2
     exit 1
   fi
@@ -75,7 +89,7 @@ github_latest_tag() {
 download() {
   local url="$1"
   echo "다운로드 중: $url" >&2
-  if ! curl -fsSL "$url"; then
+  if ! curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "$url"; then
     echo "다운로드 실패: $url" >&2
     return 1
   fi
@@ -224,9 +238,8 @@ if ! command -v delta &>/dev/null; then
         DELTA_LIBC="musl"
       fi
       DELTA_TRIPLE="${DELTA_ARCH}-unknown-linux-${DELTA_LIBC}"
-      download "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VER}-${DELTA_TRIPLE}.tar.gz" | tar -xz -C /tmp
-      mv "/tmp/delta-${DELTA_VER}-${DELTA_TRIPLE}/delta" "$HOME/.local/bin/delta"
-      rm -rf "/tmp/delta-${DELTA_VER}-${DELTA_TRIPLE}"
+      download "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VER}-${DELTA_TRIPLE}.tar.gz" | tar -xz -C "$INSTALL_TMP_DIR"
+      mv "$INSTALL_TMP_DIR/delta-${DELTA_VER}-${DELTA_TRIPLE}/delta" "$HOME/.local/bin/delta"
       ;;
     Darwin)
       brew install git-delta
@@ -242,9 +255,8 @@ if ! command -v bat &>/dev/null; then
       BAT_VERSION=$(github_latest_tag sharkdp/bat)
       BAT_VER="${BAT_VERSION#v}"
       BAT_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-      download "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
-      mv "/tmp/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl/bat" "$HOME/.local/bin/bat"
-      rm -rf "/tmp/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl"
+      download "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C "$INSTALL_TMP_DIR"
+      mv "$INSTALL_TMP_DIR/bat-${BAT_VERSION}-${BAT_ARCH}-unknown-linux-musl/bat" "$HOME/.local/bin/bat"
       ;;
     Darwin)
       brew install bat
@@ -260,9 +272,8 @@ if ! command -v fd &>/dev/null; then
       FD_VERSION=$(github_latest_tag sharkdp/fd)
       FD_VER="${FD_VERSION#v}"
       FD_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-      download "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
-      mv "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl/fd" "$HOME/.local/bin/fd"
-      rm -rf "/tmp/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl"
+      download "https://github.com/sharkdp/fd/releases/download/${FD_VERSION}/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C "$INSTALL_TMP_DIR"
+      mv "$INSTALL_TMP_DIR/fd-${FD_VERSION}-${FD_ARCH}-unknown-linux-musl/fd" "$HOME/.local/bin/fd"
       ;;
     Darwin)
       brew install fd
@@ -284,9 +295,8 @@ if ! command -v rg &>/dev/null; then
         RG_LIBC="musl"
       fi
       RG_TRIPLE="${RG_ARCH}-unknown-linux-${RG_LIBC}"
-      download "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_TRIPLE}.tar.gz" | tar -xz -C /tmp
-      mv "/tmp/ripgrep-${RG_VERSION}-${RG_TRIPLE}/rg" "$HOME/.local/bin/rg"
-      rm -rf "/tmp/ripgrep-${RG_VERSION}-${RG_TRIPLE}"
+      download "https://github.com/BurntSushi/ripgrep/releases/download/${RG_VERSION}/ripgrep-${RG_VERSION}-${RG_TRIPLE}.tar.gz" | tar -xz -C "$INSTALL_TMP_DIR"
+      mv "$INSTALL_TMP_DIR/ripgrep-${RG_VERSION}-${RG_TRIPLE}/rg" "$HOME/.local/bin/rg"
       ;;
     Darwin)
       brew install ripgrep
@@ -301,8 +311,8 @@ if ! command -v eza &>/dev/null; then
     Linux)
       EZA_VERSION=$(github_latest_tag eza-community/eza)
       EZA_LIBC=$([ "$ARCH" = "aarch64" ] && echo "gnu" || echo "musl")
-      download "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${ARCH}-unknown-linux-${EZA_LIBC}.tar.gz" | tar -xz -C /tmp
-      mv "/tmp/eza" "$HOME/.local/bin/eza"
+      download "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${ARCH}-unknown-linux-${EZA_LIBC}.tar.gz" | tar -xz -C "$INSTALL_TMP_DIR"
+      mv "$INSTALL_TMP_DIR/eza" "$HOME/.local/bin/eza"
       ;;
     Darwin)
       brew install eza
@@ -318,8 +328,8 @@ if ! command -v zoxide &>/dev/null; then
       ZOXIDE_VERSION=$(github_latest_tag ajeetdsouza/zoxide)
       ZOXIDE_VER="${ZOXIDE_VERSION#v}"
       ZOXIDE_ARCH=$([ "$ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
-      download "https://github.com/ajeetdsouza/zoxide/releases/download/${ZOXIDE_VERSION}/zoxide-${ZOXIDE_VER}-${ZOXIDE_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C /tmp
-      mv "/tmp/zoxide" "$HOME/.local/bin/zoxide"
+      download "https://github.com/ajeetdsouza/zoxide/releases/download/${ZOXIDE_VERSION}/zoxide-${ZOXIDE_VER}-${ZOXIDE_ARCH}-unknown-linux-musl.tar.gz" | tar -xz -C "$INSTALL_TMP_DIR"
+      mv "$INSTALL_TMP_DIR/zoxide" "$HOME/.local/bin/zoxide"
       ;;
     Darwin)
       brew install zoxide
@@ -335,23 +345,13 @@ if ! command -v lazygit &>/dev/null; then
       LG_VERSION=$(github_latest_tag jesseduffield/lazygit)
       LG_VER="${LG_VERSION#v}"
       LG_ARCH=$([ "$ARCH" = "aarch64" ] && echo "arm64" || echo "x86_64")
-      download "https://github.com/jesseduffield/lazygit/releases/download/${LG_VERSION}/lazygit_${LG_VER}_Linux_${LG_ARCH}.tar.gz" | tar -xz -C /tmp
-      mv "/tmp/lazygit" "$HOME/.local/bin/lazygit"
+      download "https://github.com/jesseduffield/lazygit/releases/download/${LG_VERSION}/lazygit_${LG_VER}_Linux_${LG_ARCH}.tar.gz" | tar -xz -C "$INSTALL_TMP_DIR"
+      mv "$INSTALL_TMP_DIR/lazygit" "$HOME/.local/bin/lazygit"
       ;;
     Darwin)
       brew install lazygit
       ;;
   esac
-fi
-
-# TPM + tmux-resurrect 설치
-if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
-  echo "TPM 설치 중..."
-  git clone --depth=1 https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
-fi
-if [ ! -d "$HOME/.tmux/plugins/tmux-resurrect" ]; then
-  echo "tmux-resurrect 설치 중..."
-  git clone --depth=1 https://github.com/tmux-plugins/tmux-resurrect "$HOME/.tmux/plugins/tmux-resurrect"
 fi
 
 # pipx + Python 도구 설치
@@ -399,9 +399,10 @@ if ! grep -q "exec zsh" "$HOME/.bashrc" 2>/dev/null; then
   echo "zsh 자동 전환을 .bashrc에 추가했습니다."
 elif grep -q 'exec zsh' "$HOME/.bashrc" && ! grep -q '\$-' "$HOME/.bashrc"; then
   # 인터랙티브 체크 없는 구버전이면 교체 (BSD/GNU sed 호환)
-  grep -v 'exec zsh' "$HOME/.bashrc" > /tmp/.bashrc_tmp || true
-  echo "$BASHRC_LINE" >> /tmp/.bashrc_tmp
-  mv /tmp/.bashrc_tmp "$HOME/.bashrc"
+  bashrc_tmp=$(mktemp "$INSTALL_TMP_DIR/bashrc.XXXXXX")
+  grep -v 'exec zsh' "$HOME/.bashrc" > "$bashrc_tmp" || true
+  echo "$BASHRC_LINE" >> "$bashrc_tmp"
+  mv "$bashrc_tmp" "$HOME/.bashrc"
   echo "zsh 자동 전환 코드를 인터랙티브 전용으로 업데이트했습니다."
 fi
 

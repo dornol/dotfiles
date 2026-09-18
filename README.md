@@ -74,12 +74,22 @@ powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/uninstall.
 
 ## 자동 동기화
 
-셸 시작은 네트워크 접근이나 파일 쓰기를 하지 않습니다. 업데이트는 명시적으로
+셸 시작 시 첫 interactive Zsh가 하루에 한 번 백그라운드에서 dotfiles 저장소를
+`git pull --ff-only`로 확인합니다. 셸 시작은 pull이 끝날 때까지 기다리지 않으며,
+인증 프롬프트도 표시하지 않습니다. 자동 업데이트를 끄려면
+`DOTFILES_AUTO_UPDATE_DISABLED=1`을 설정하세요. 수동 업데이트는 다음 명령으로
 실행합니다:
 
 ```bash
 dotfiles-update
+dotfiles-update-plugins
 ```
+
+`dotfiles-update`는 dotfiles 저장소만 갱신하고, `dotfiles-update-plugins`는
+설치된 zsh 플러그인을 각각 fast-forward 방식으로 갱신합니다.
+
+자동 업데이트의 시도 시각과 결과는 `~/.cache/dotfiles-update.log`와
+`~/.cache/dotfiles/` 아래에 저장됩니다.
 
 `~/.zshenv`, `~/.zprofile`, `~/.zshrc`에는 각각 dotfiles source block만
 추가됩니다. `.zshenv`는 IDE/CI에도 필요한 환경변수만, `.zprofile`은 로그인 셸

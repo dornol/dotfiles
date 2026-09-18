@@ -5,6 +5,7 @@ export EDITOR="${EDITOR:-nvim}"
 export VISUAL="${VISUAL:-$EDITOR}"
 export NVIM_NOTTYFAST="1 nvim"
 export SDKMAN_DIR="${SDKMAN_DIR:-$HOME/.sdkman}"
+umask 077
 
 # Do not invent a broken JAVA_HOME on hosts where SDKMAN is not installed.
 if [[ -z "${JAVA_HOME:-}" && -d "$SDKMAN_DIR/candidates/java/current" ]]; then

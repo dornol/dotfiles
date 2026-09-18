@@ -159,3 +159,4 @@ add-zle-hook-widget zle-line-init __dotfiles_load_zle_plugins
 source "${${(%):-%x}:A:h}/prompt.zsh"
 source "${${(%):-%x}:A:h}/dotfiles-update.zsh"
 [[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
+dotfiles-auto-update
