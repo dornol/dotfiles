@@ -12,7 +12,7 @@ opt.colorcolumn = ""
 opt.mouse = ""
 opt.showcmd = false
 opt.wrap = false
-opt.clipboard = "unnamedplus"
+-- Keep LazyVim's clipboard default: unnamedplus locally, no automatic sync on SSH.
 
 -- tab 문자를 보이지 않게 (LazyVim 기본값 override)
 opt.listchars = { tab = "  ", trail = "·", nbsp = "␣" }

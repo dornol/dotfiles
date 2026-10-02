@@ -34,7 +34,7 @@ require("lazy").setup({
   },
   install = { colorscheme = { "tokyonight", "habamax" } },
   checker = {
-    enabled = true,
+    enabled = false, -- Check/update manually with :Lazy.
     notify = false,
   },
   performance = {
