@@ -115,6 +115,11 @@ IDE/CI secret 설정, OS credential store 또는 Linux `environment.d`를
 `${XDG_CACHE_HOME:-~/.cache}/zsh/starship-init.zsh`에 생성합니다. 셸 startup은
 캐시를 읽기만 하며 캐시 파일을 생성하거나 수정하지 않습니다.
 
+같은 적용 과정에서 `${ZDOTDIR:-$HOME}/.zcompdump`를 제거해 새로 설치한
+completion도 반영합니다. 다음 새 셸에서 첫 Tab을 누르면 자동완성 캐시를
+다시 생성합니다. 도구를 별도로 설치한 뒤에는 `bin/dotfiles-zsh-cache`를
+실행하고 새 셸을 열면 됩니다.
+
 fnm은 `.node-version` 또는 `.nvmrc`가 있는 프로젝트에서만 shell integration을
 활성화합니다. 프로젝트 안에서 터미널을 바로 연 경우에는 첫 입력 직전에 한 번
 확인하고, 이후에는 fnm의 디렉터리 변경 hook이 버전을 관리합니다.

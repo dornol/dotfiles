@@ -2,6 +2,10 @@
 set -e
 set -o pipefail
 
+# Rebuild completion metadata after installing or updating tools. The next
+# interactive shell runs compinit without -C when no dump exists.
+rm -f "${ZDOTDIR:-$HOME}/.zcompdump"
+
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
 STARSHIP_CACHE="$CACHE_DIR/starship-init.zsh"
 

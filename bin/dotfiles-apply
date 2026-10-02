@@ -84,6 +84,10 @@ overlay = json.loads(source.read_text())
 target.write_text(json.dumps(merge(base, overlay), indent=2, ensure_ascii=False) + "\n")
 PY
   else
+    if [ -f "$target" ]; then
+      echo "기존 Claude 설정을 병합하려면 jq 또는 python3가 필요합니다: $target" >&2
+      return 1
+    fi
     cp "$source" "$target"
   fi
 }
