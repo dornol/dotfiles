@@ -3,7 +3,6 @@
 	email = ucceoum@gmail.com
 
 [core]
-	fileMode = false
 	autocrlf = false
 	pager = delta
 

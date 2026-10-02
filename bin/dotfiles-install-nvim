@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -ne 3 ]; then
+  echo "사용법: dotfiles-install-nvim URL INSTALL_DIR LINK_PATH" >&2
+  exit 2
+fi
+
+url=$1
+target=$2
+link=$3
+if [ -d "$link" ]; then
+  echo "실행 파일 링크 경로가 디렉터리입니다: $link" >&2
+  exit 1
+fi
+mkdir -p "$(dirname "$target")" "$(dirname "$link")"
+stage=$(mktemp -d "$(dirname "$target")/.dotfiles-nvim.XXXXXX")
+backup="$stage/previous"
+installed=false
+cleanup() {
+  local status=$?
+  if [ "$status" -ne 0 ] && [ "$installed" = true ]; then
+    rm -rf "$target"
+    if [ -e "$backup" ] || [ -L "$backup" ]; then
+      if ! mv "$backup" "$target"; then
+        echo "복원 실패. 기존 설치를 보존했습니다: $backup" >&2
+        return 1
+      fi
+    fi
+  elif [ "$status" -ne 0 ] && { [ -e "$backup" ] || [ -L "$backup" ]; }; then
+    if ! mv "$backup" "$target"; then
+      echo "복원 실패. 기존 설치를 보존했습니다: $backup" >&2
+      return 1
+    fi
+  fi
+  rm -rf "$stage"
+  return "$status"
+}
+trap cleanup EXIT
+
+curl -fSL --retry 3 --connect-timeout 15 "$url" -o "$stage/nvim.tar.gz"
+mkdir "$stage/new"
+tar -xzf "$stage/nvim.tar.gz" --strip-components=1 -C "$stage/new"
+"$stage/new/bin/nvim" --version >/dev/null
+# Prepare the link before moving the old installation, then replace it last.
+ln -s "$target/bin/nvim" "$stage/link"
+if [ -e "$target" ] || [ -L "$target" ]; then
+  mv "$target" "$backup"
+fi
+mv "$stage/new" "$target"
+installed=true
+mv -fT "$stage/link" "$link"

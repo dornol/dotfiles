@@ -37,9 +37,11 @@ powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ~/dotfiles/install.ps
 
 `.gitconfig`의 공통 설정과 `.claude/settings.json`, `.claude/hooks/notify.sh` 적용됨 (MCP 설정은 유지)
 
-Git 설정은 `~/.gitconfig`에 dotfiles의 공통 설정을 include합니다. `gh auth setup-git`나
-`safe.directory`처럼 컴퓨터별로 자동 추가되는 설정은 추적하지 않는 `~/.gitconfig.local`에
-저장되므로 dotfiles 저장소가 자동 변경되지 않습니다.
+Git 설정은 `~/.gitconfig` 맨 앞에서 공통 설정을 include합니다. 뒤에 있는
+기존 머신별 설정과 `~/.gitconfig.local`로 공통 값을 덮어쓸 수 있습니다.
+`git config --global`과 `gh auth setup-git`가 추가하는 설정은 로컬 wrapper에
+저장되므로 dotfiles 저장소가 자동 변경되지 않습니다. 실행 권한 추적을 끄려면
+필요한 환경에서만 `git config --global core.fileMode false`를 실행하세요.
 
 WSL에서 `install.sh` 실행 시 Windows Terminal 테마/폰트도 자동 적용됨.
 
@@ -129,7 +131,30 @@ JetBrains의 WSL/IJent 환경 수집은 pseudo-TTY를 사용하므로 일반 TTY
 `.zshenv`의 export만 유지하고 `.zprofile.local`, prompt, ZLE 플러그인 및 기타
 interactive 초기화를 건너뜁니다. 해당 변수를 설정하지 않는 IJent 2026.2
 환경 리더는 `.zshenv`에서 IJent 임시 작업 디렉터리와 `ijent` 부모 프로세스의
-조합으로 식별합니다. 부모 확인에는 zsh 내장 `read`만 사용합니다. 이 버전의
-IJent가 환경 조회 명령을 보내지 않고 기본 zsh prompt에서 대기하는 경우에는
-필수 export 구성이 끝난 직후 해당 probe shell만 종료하여 IDE가 30초 동안
-멈추는 것을 방지합니다.
+조합으로 식별합니다. 부모 확인에는 zsh 내장 `read`만 사용합니다.
+환경 리더에서는 터미널 초기화를 건너뛰되 셸을 종료하지 않아 IJent의
+환경 조회 요청에 응답할 수 있도록 유지합니다.
+
+## 진단과 검증
+
+설정 적용 후 `dotfiles doctor`로 필요한 명령, 관리 링크, Git include,
+셸 source block, 캐시와 clipboard 도구를 읽기 전용으로 확인합니다.
+문제가 있으면 종료 코드 1과 `WARN` 항목을 출력합니다.
+적용 전에는 `bash bin/dotfiles-doctor`로 직접 실행할 수 있습니다.
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+검증은 임시 HOME에서 적용·재적용·제거, 사용자 설정 보존과 Neovim 업데이트
+실패 시 복구를 확인하며 실제 홈 설정과 시스템 설치는 변경하지 않습니다.
+GitHub Actions에서도 같은 검증을 실행합니다.
+
+Neovim의 `lazy-lock.json`을 추적합니다. 새 컴퓨터에서는 `:Lazy restore`로
+기록된 버전을 적용하고, 플러그인 업데이트 시 lockfile 변경도 함께 검토합니다.
+
+설치 시 Claude 설정은 기존 값을 우선하며 hook 배열에는 중복 없이 공통 항목을
+추가합니다. `--purge`는 공통 값과 같은 항목만 제거하고 수정된 값은 보존합니다.
+제거 시 현재 설정이 남아 있으면 `.bak.*` 백업을 덮어 복원하지 않습니다.
+Neovim 업데이트는 다운로드·압축 해제·실행 확인 후 교체하며 실패하면 기존
+설치를 보존하거나 복원합니다.

@@ -40,7 +40,7 @@ merge_claude_settings() {
   if [ -L "$target" ]; then
     local linked_real
     linked_real=$(realpath "$target" 2>/dev/null || echo "")
-    if [[ "$linked_real" == "$DOTFILES_DIR"* ]]; then
+    if [[ "$linked_real" == "$DOTFILES_DIR/"* ]]; then
       rm "$target"
     fi
   fi
@@ -53,6 +53,9 @@ merge_claude_settings() {
         reduce ($b | keys_unsorted[]) as $key ($a;
           .[$key] = if (.[$key] | type) == "object" and ($b[$key] | type) == "object"
             then deepmerge(.[$key]; $b[$key])
+            elif (.[$key] | type) == "array" and ($b[$key] | type) == "array"
+            then reduce $b[$key][] as $item (.[$key]; if index($item) == null then . + [$item] else . end)
+            elif has($key) then .[$key]
             else $b[$key]
             end
         );
@@ -75,7 +78,9 @@ def merge(a, b):
     for key, value in b.items():
         if isinstance(result.get(key), dict) and isinstance(value, dict):
             result[key] = merge(result[key], value)
-        else:
+        elif isinstance(result.get(key), list) and isinstance(value, list):
+            result[key] = result[key] + [item for item in value if item not in result[key]]
+        elif key not in result:
             result[key] = value
     return result
 
@@ -107,7 +112,7 @@ install_claude_hook() {
   if [ -L "$target_dir" ]; then
     local hooks_real
     hooks_real=$(realpath "$target_dir" 2>/dev/null || echo "")
-    if [[ "$hooks_real" == "$DOTFILES_DIR"* ]]; then
+    if [[ "$hooks_real" == "$DOTFILES_DIR/"* ]]; then
       rm "$target_dir"
     fi
   fi
@@ -120,6 +125,9 @@ install_claude_hook() {
     if [ "$source_real" = "$target_real" ]; then
       [ -L "$target" ] && return 0
       rm -f "$target"
+    else
+      echo "기존 알림 hook을 보존하고 건너뜀: $target" >&2
+      return 0
     fi
   fi
   ln -sf "$source" "$target"
@@ -141,7 +149,11 @@ remove_claude_settings() {
         if (.[$key] | type) == "object" and ($b[$key] | type) == "object"
         then .[$key] = remove_keys(.[$key]; $b[$key])
           | if .[$key] == {} then del(.[$key]) else . end
-        else del(.[$key])
+        elif (.[$key] | type) == "array" and ($b[$key] | type) == "array"
+        then .[$key] = [.[$key][] as $item | select($b[$key] | index($item) == null) | $item]
+          | if .[$key] == [] then del(.[$key]) else . end
+        elif .[$key] == $b[$key] then del(.[$key])
+        else .
         end
       );
       remove_keys(.[0]; .[1])' "$target" "$source" > "$tmp"
@@ -166,7 +178,11 @@ def remove_keys(a, b):
             result[key] = remove_keys(result[key], value)
             if not result[key]:
                 result.pop(key, None)
-        else:
+        elif isinstance(result.get(key), list) and isinstance(value, list):
+            result[key] = [item for item in result[key] if item not in value]
+            if not result[key]:
+                result.pop(key, None)
+        elif key in result and result[key] == value:
             result.pop(key, None)
     return result
 
@@ -186,7 +202,7 @@ remove_dotfiles_link() {
   local real
   [ -L "$target" ] || return 0
   real=$(realpath "$target" 2>/dev/null || echo "")
-  if [[ "$real" == "$DOTFILES_DIR"* ]]; then
+  if [[ "$real" == "$DOTFILES_DIR/"* ]]; then
     rm "$target"
   fi
 }
@@ -228,6 +244,7 @@ remove_local_bin_scripts() {
 install_gitconfig_wrapper() {
   local target="$HOME/.gitconfig"
   local source="$DOTFILES_DIR/.gitconfig"
+  local include_path
   local begin="# >>> dotfiles gitconfig >>>"
   local end="# <<< dotfiles gitconfig <<<"
   local tmp
@@ -245,15 +262,19 @@ install_gitconfig_wrapper() {
     touch "$target"
   fi
 
-  grep -Fq "$begin" "$target" && return 0
-  tmp=$(mktemp)
-  cat "$target" > "$tmp"
+  tmp=$(mktemp "${target}.tmp.XXXXXX")
+  include_path=${source//\\/\\\\}
+  include_path=${include_path//\"/\\\"}
   {
-    [ -s "$tmp" ] && printf '\n'
     printf '%s\n' "$begin"
-    printf '[include]\n\tpath = %s\n' "$source"
+    printf '[include]\n\tpath = "%s"\n' "$include_path"
     printf '%s\n' "$end"
-  } >> "$tmp"
+    awk -v begin="$begin" -v end="$end" '
+      $0 == begin { skip = 1; next }
+      $0 == end { skip = 0; next }
+      !skip { print }
+    ' "$target"
+  } > "$tmp"
   mv "$tmp" "$target"
 }
 
@@ -294,7 +315,7 @@ install_source_block() {
   if [ -L "$target" ]; then
     local target_real
     target_real=$(realpath "$target" 2>/dev/null || echo "")
-    if [[ "$target_real" == "$DOTFILES_DIR"* ]]; then
+    if [[ "$target_real" == "$DOTFILES_DIR/"* ]]; then
       rm "$target"
       touch "$target"
     fi
@@ -365,6 +386,30 @@ run_stow() {
   fi
 }
 
+remove_managed_stow_links() {
+  # Stow aborts --delete when a user has replaced a managed link with a file.
+  # Remove only links still pointing at their corresponding repository file.
+  local source target directory
+  while IFS= read -r source; do
+    target="$HOME/${source#"$DOTFILES_DIR/"}"
+    if [ -L "$target" ] && [ "$target" -ef "$source" ]; then
+      rm "$target"
+    fi
+  done < <(find "$DOTFILES_DIR/.config" "$DOTFILES_DIR/.local" \
+    -type f -o -type l)
+  for source in "$DOTFILES_DIR/.tmux.conf" "$DOTFILES_DIR/.wezterm.lua"; do
+    target="$HOME/${source##*/}"
+    if [ -L "$target" ] && [ "$target" -ef "$source" ]; then rm "$target"; fi
+  done
+  for directory in "$HOME/.config/nvim" "$HOME/.config/zsh"; do
+    if [ -d "$directory" ] && [ ! -L "$directory" ]; then
+      while IFS= read -r target; do
+        rmdir "$target" 2>/dev/null || true
+      done < <(find "$directory" -depth -type d)
+    fi
+  done
+}
+
 if [ "$MODE" = "remove" ]; then
   if [ "$PURGE" = true ]; then
     remove_claude_settings
@@ -376,7 +421,7 @@ if [ "$MODE" = "remove" ]; then
   remove_source_block "$HOME/.zprofile"
   remove_local_bin_scripts
   rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/starship-init.zsh"
-  run_stow --delete
+  remove_managed_stow_links
   exit 0
 fi
 

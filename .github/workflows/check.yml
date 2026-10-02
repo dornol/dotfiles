@@ -1,0 +1,28 @@
+name: Check dotfiles
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y stow zsh jq
+      - run: python3 -m unittest discover -s tests -v
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PowerShell syntax
+        shell: pwsh
+        run: |
+          Get-ChildItem *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count) { throw ($errors | Out-String) }
+          }
+      - name: Check installation and removal in a temporary profile
+        shell: pwsh
+        run: ./tests/check-windows.ps1
+      - name: Check compatibility with Windows PowerShell
+        shell: powershell
+        run: ./tests/check-windows.ps1

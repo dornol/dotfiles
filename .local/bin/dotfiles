@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Resolve the installed symlink without requiring GNU readlink -f.
+source_path=${BASH_SOURCE[0]}
+while [ -L "$source_path" ]; do
+  source_dir=$(cd "$(dirname "$source_path")" && pwd)
+  source_path=$(readlink "$source_path")
+  [[ "$source_path" == /* ]] || source_path="$source_dir/$source_path"
+done
+repo=$(cd "$(dirname "$source_path")/../.." && pwd)
+case "${1:-}" in
+  doctor) shift; exec bash "$repo/bin/dotfiles-doctor" "$@" ;;
+  -h|--help|"") echo "사용법: dotfiles doctor" ;;
+  *) echo "알 수 없는 명령: $1" >&2; exit 2 ;;
+esac

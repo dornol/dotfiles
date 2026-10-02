@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -uo pipefail
+[[ "$#" -eq 0 ]] || { echo "사용법: dotfiles doctor" >&2; exit 2; }
+repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+issues=0
+ok() { printf 'OK   %s\n' "$*"; }
+warn() { printf 'WARN %s\n' "$*"; issues=$((issues + 1)); }
+
+for tool in git stow zsh tmux nvim starship fzf delta bat fd rg eza zoxide; do
+  if command -v "$tool" >/dev/null 2>&1; then ok "$tool"; else warn "명령 없음: $tool"; fi
+done
+if command -v jq >/dev/null 2>&1 || command -v python3 >/dev/null 2>&1; then
+  ok "JSON 병합 도구"
+else
+  warn "JSON 병합에 jq 또는 python3 필요"
+fi
+
+check_link() {
+  local target=$1 expected=$2 actual
+  if [[ ! -L "$target" ]]; then warn "관리 링크 없음: $target"; return; fi
+  actual=$(readlink "$target")
+  [[ "$actual" == /* ]] || actual="$(dirname "$target")/$actual"
+  if [[ -e "$target" && "$actual" -ef "$expected" ]]; then
+    ok "링크: $target"
+  else
+    warn "깨지거나 다른 대상을 가리키는 링크: $target"
+  fi
+}
+check_link "$HOME/.tmux.conf" "$repo/.tmux.conf"
+check_link "$HOME/.wezterm.lua" "$repo/.wezterm.lua"
+check_link "$HOME/.config/nvim/init.lua" "$repo/.config/nvim/init.lua"
+for script in "$repo/.local/bin/"*; do
+  check_link "$HOME/.local/bin/${script##*/}" "$script"
+done
+
+if command -v git >/dev/null 2>&1 &&
+   git config --global --get-all include.path 2>/dev/null | grep -Fxq "$repo/.gitconfig"; then
+  ok "Git 공통 설정 include"
+else
+  warn "Git 공통 설정 include 없음: $repo/.gitconfig"
+fi
+for file in .zshrc .zshenv .zprofile; do
+  if grep -Fq '# >>> dotfiles >>>' "$HOME/$file" 2>/dev/null; then ok "$file source block"; else warn "$file source block 없음"; fi
+done
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/starship-init.zsh"
+if [[ -r "$cache" ]]; then
+  if command -v starship >/dev/null 2>&1 && [[ ! "$cache" -nt "$(command -v starship)" ]]; then
+    warn "오래된 prompt 캐시: bin/dotfiles-zsh-cache 실행 필요"
+  else
+    ok "prompt 캐시"
+  fi
+else
+  warn "prompt 캐시 없음: bin/dotfiles-zsh-cache 실행 필요"
+fi
+if [[ -s "${ZDOTDIR:-$HOME}/.zcompdump" ]]; then ok "completion 캐시"; else printf 'INFO completion 캐시는 새 셸의 첫 Tab에서 생성됩니다.\n'; fi
+if command -v pbcopy >/dev/null 2>&1 || command -v win32yank.exe >/dev/null 2>&1 ||
+   { [[ -n "${WAYLAND_DISPLAY:-}" ]] && command -v wl-copy >/dev/null 2>&1 && command -v wl-paste >/dev/null 2>&1; } ||
+   { [[ -n "${DISPLAY:-}" ]] && { command -v xclip >/dev/null 2>&1 || command -v xsel >/dev/null 2>&1; }; }; then
+  ok "clipboard 도구"
+else
+  warn "clipboard 도구/세션 확인 필요 (Neovim에서 :checkhealth vim.provider 실행)"
+fi
+printf '\n확인 필요: %s개\n' "$issues"
+(( issues == 0 ))

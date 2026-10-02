@@ -156,11 +156,9 @@ else
       if [ "${GLIBC_MINOR:-0}" -lt 29 ] 2>/dev/null; then
         echo "GLIBC $GLIBC_VER — nvim 최신 버전 미지원, 건너뜀"
       else
-        if [ "$UPDATE_NVIM" = true ]; then
-          sudo rm -rf "/opt/nvim-linux-${NVIM_ARCH}"
-        fi
-        download "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" | sudo tar -xz -C /opt
-        sudo ln -sf "/opt/nvim-linux-${NVIM_ARCH}/bin/nvim" /usr/local/bin/nvim
+        sudo bash "$DOTFILES_DIR/bin/dotfiles-install-nvim" \
+          "https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz" \
+          "/opt/nvim-linux-${NVIM_ARCH}" /usr/local/bin/nvim
         NVIM_INSTALLED=true
       fi
       ;;
@@ -411,16 +409,9 @@ fi
 backup_if_exists() {
   local target="$1"
   local real
-  # ~/.gitconfig is a writable local wrapper.  Keep it in place so Git and
-  # GitHub CLI can add machine-specific settings without touching dotfiles.
-  if [[ "$target" == "$HOME/.gitconfig" ]] &&
-     [ -f "$target" ] &&
-     grep -Fq '# >>> dotfiles gitconfig >>>' "$target"; then
-    return
-  fi
   real=$(realpath "$target" 2>/dev/null || echo "")
   # dotfiles 디렉토리 안의 파일이면 스킵
-  if [[ "$real" == "$DOTFILES_DIR"* ]]; then
+  if [[ "$real" == "$DOTFILES_DIR/"* ]]; then
     return
   fi
   if [ -e "$target" ] && [ ! -L "$target" ]; then
@@ -432,7 +423,6 @@ backup_if_exists() {
 
 backup_if_exists "$HOME/.config/nvim"
 backup_if_exists "$HOME/.wezterm.lua"
-backup_if_exists "$HOME/.gitconfig"
 backup_if_exists "$HOME/.tmux.conf"
 backup_if_exists "$HOME/.claude/hooks/notify.sh"
 

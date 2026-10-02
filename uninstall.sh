@@ -40,8 +40,9 @@ fi
 # .bashrc에서 zsh 자동 전환 라인 제거
 if grep -q 'exec zsh' "$HOME/.bashrc" 2>/dev/null; then
   echo ".bashrc에서 zsh 자동 전환 라인 제거 중..."
-  grep -v 'exec zsh' "$HOME/.bashrc" > /tmp/.bashrc_tmp || true
-  mv /tmp/.bashrc_tmp "$HOME/.bashrc"
+  bashrc_tmp=$(mktemp "$HOME/.bashrc.tmp.XXXXXX")
+  grep -v 'exec zsh' "$HOME/.bashrc" > "$bashrc_tmp" || true
+  mv "$bashrc_tmp" "$HOME/.bashrc"
 fi
 
 # 가장 최신 .bak.* 백업을 원래 위치로 복원
@@ -51,7 +52,13 @@ restore_latest_backup() {
   latest=$(ls -1dt "${target}.bak."* 2>/dev/null | head -n 1 || true)
   if [ -n "$latest" ]; then
     if [ -e "$target" ] || [ -L "$target" ]; then
-      rm -rf "$target"
+      # Stow can leave an empty container directory behind.
+      if [ -d "$target" ] && [ ! -L "$target" ] && rmdir "$target" 2>/dev/null; then
+        :
+      else
+        echo "현재 설정을 보존하고 백업 복원을 건너뜀: $target (백업: $latest)"
+        return 0
+      fi
     fi
     echo "백업 복원: $latest -> $target"
     mv "$latest" "$target"

@@ -1,4 +1,5 @@
 # dotfiles installer for Windows
+$ErrorActionPreference = 'Stop'
 $DOTFILES = Split-Path -Parent $MyInvocation.MyCommand.Path
 $HOME_DIR = $env:USERPROFILE
 
@@ -31,8 +32,15 @@ function Merge-JsonObject {
       $targetValue = $Target.$name
       if (($targetValue -is [pscustomobject]) -and ($value -is [pscustomobject])) {
         Merge-JsonObject -Target $targetValue -Source $value | Out-Null
-      } else {
-        $Target | Add-Member -MemberType NoteProperty -Name $name -Value $value -Force
+      } elseif (($targetValue -is [array]) -and ($value -is [array])) {
+        $items = @($targetValue)
+        foreach ($item in $value) {
+          $serialized = ConvertTo-Json -InputObject $item -Depth 100 -Compress
+          if (-not @($items | Where-Object { (ConvertTo-Json -InputObject $_ -Depth 100 -Compress) -eq $serialized }).Count) {
+            $items += ,$item
+          }
+        }
+        $Target | Add-Member -MemberType NoteProperty -Name $name -Value $items -Force
       }
     } else {
       $Target | Add-Member -MemberType NoteProperty -Name $name -Value $value
@@ -44,15 +52,12 @@ function Merge-JsonObject {
 
 # .gitconfig: keep the machine-local file writable so Git/gh can update it.
 $gitconfig = "$HOME_DIR\.gitconfig"
-$gitconfigInclude = "path = $($DOTFILES -replace '\\', '/')/.gitconfig"
-$gitconfigContent = if (Test-Path $gitconfig) { Get-Content $gitconfig -Raw } else { "" }
-if ($gitconfigContent -notmatch [regex]::Escape($gitconfigInclude)) {
-  if ($gitconfigContent -and -not $gitconfigContent.EndsWith("`n")) { Add-Content $gitconfig "" }
-  Add-Content $gitconfig "# >>> dotfiles gitconfig >>>"
-  Add-Content $gitconfig "[include]"
-  Add-Content $gitconfig "    $gitconfigInclude"
-  Add-Content $gitconfig "# <<< dotfiles gitconfig <<<"
-}
+$gitconfigPath = ($DOTFILES -replace '\\', '/') + '/.gitconfig'
+$gitconfigPath = $gitconfigPath.Replace('"', '\"')
+$gitconfigContent = if (Test-Path $gitconfig) { [string](Get-Content $gitconfig -Raw) } else { "" }
+$gitconfigContent = [regex]::Replace($gitconfigContent, '(?ms)^# >>> dotfiles gitconfig >>>\r?\n.*?^# <<< dotfiles gitconfig <<<\r?\n?', '')
+$gitconfigBlock = "# >>> dotfiles gitconfig >>>`n[include]`n    path = `"$gitconfigPath`"`n# <<< dotfiles gitconfig <<<`n"
+[IO.File]::WriteAllText($gitconfig, $gitconfigBlock + $gitconfigContent, [Text.UTF8Encoding]::new($false))
 Write-Host ".gitconfig include done"
 
 # .claude/settings.json (merge)
@@ -66,7 +71,7 @@ $dotfilesJson = Get-Content $sourceSettings -Raw | ConvertFrom-Json
 if (Test-Path $targetSettings) {
   $existingJson = Get-Content $targetSettings -Raw | ConvertFrom-Json
   Merge-JsonObject -Target $existingJson -Source $dotfilesJson | Out-Null
-  $existingJson | ConvertTo-Json -Depth 10 | Set-Content $targetSettings
+  $existingJson | ConvertTo-Json -Depth 100 | Set-Content $targetSettings -Encoding UTF8
   Write-Host ".claude/settings.json merged"
 } else {
   Copy-Item $sourceSettings $targetSettings
