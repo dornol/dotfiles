@@ -10,6 +10,16 @@ cd ~/dotfiles
 bash install.sh
 ```
 
+IntelliJ의 WSL/IJent 환경 수집까지 zsh 기준으로 동작시키려면 WSL에서 사용자
+기본 셸도 zsh로 맞춥니다. 이 설정은 머신별 계정 설정이므로 필요할 때 한 번만
+명시적 옵션으로 실행합니다:
+
+```bash
+bash ~/dotfiles/install.sh --set-default-shell
+```
+
+실행 후 WSL 터미널과 IntelliJ를 완전히 재시작합니다.
+
 SDKMAN도 함께 설치되며, Java/Kotlin/Gradle 등의 SDK는 필요할 때 직접 설치함.
 예: `sdk install java`
 
