@@ -49,4 +49,4 @@ if [ -e "$target" ] || [ -L "$target" ]; then
 fi
 mv "$stage/new" "$target"
 installed=true
-mv -fT "$stage/link" "$link"
+mv -f "$stage/link" "$link"

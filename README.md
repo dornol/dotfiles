@@ -90,6 +90,10 @@ dotfiles-update-plugins
 `dotfiles-update`는 dotfiles 저장소만 갱신하고, `dotfiles-update-plugins`는
 설치된 zsh 플러그인을 각각 fast-forward 방식으로 갱신합니다.
 
+1시간 이상 남은 잠금은 소유 프로세스가 종료된 경우 다음 셸에서 자동 복구합니다.
+`dotfiles doctor`에서 마지막 업데이트 성공 여부, pull·설정 적용 실패와 남은 잠금을
+확인할 수 있습니다.
+
 자동 업데이트의 시도 시각과 결과는 `~/.cache/dotfiles-update.log`와
 `~/.cache/dotfiles/` 아래에 저장됩니다.
 
@@ -148,7 +152,10 @@ python3 -m unittest discover -s tests -v
 
 검증은 임시 HOME에서 적용·재적용·제거, 사용자 설정 보존과 Neovim 업데이트
 실패 시 복구를 확인하며 실제 홈 설정과 시스템 설치는 변경하지 않습니다.
-GitHub Actions에서도 같은 검증을 실행합니다.
+GitHub Actions에서도 Linux와 macOS에서 같은 검증을 실행합니다.
+별도 Neovim 작업은 임시 HOME에 lockfile 버전을 복원하고 실제 시작 시
+플러그인 로딩·설정 오류를 확인합니다. 네트워크 연결과 Neovim이 있으면
+`python3 tests/check_nvim.py`로 직접 실행할 수 있습니다.
 
 Neovim의 `lazy-lock.json`을 추적합니다. 새 컴퓨터에서는 `:Lazy restore`로
 기록된 버전을 적용하고, 플러그인 업데이트 시 lockfile 변경도 함께 검토합니다.

@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -152,12 +153,56 @@ class DotfilesTests(unittest.TestCase):
                 self.assertEqual(link.resolve(), old)
         old.write_text('#!/bin/sh\necho old\n')
         real_mv = shutil.which('mv')
-        self.stub('mv', f'if [[ "$1" == -fT ]]; then exit 1; fi\nexec "{real_mv}" "$@"\n')
+        self.stub('mv', f'if [[ "$1" == -f ]]; then exit 1; fi\nexec "{real_mv}" "$@"\n')
         result = self.run_command('bash', helper, 'unused', str(target), str(link), success=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('old', old.read_text())
         self.assertEqual(link.resolve(), old)
         self.assertFalse(list(target.parent.glob('.dotfiles-nvim.*')))
+
+    def test_auto_update_recovers_stale_lock_and_records_results(self):
+        if not shutil.which('zsh'):
+            self.skipTest('zsh required')
+        state = self.home / '.cache/dotfiles'
+        lock = state / 'lock'
+        lock.mkdir(parents=True)
+        (lock / 'pid').write_text('99999999\n')
+        os.utime(lock, (1, 1))
+        (state / 'last-attempt').write_text(str(int(time.time())))
+        self.stub('git', 'exit "${TEST_PULL_EXIT:-0}"\n')
+        self.stub('bash', 'exit "${TEST_APPLY_EXIT:-0}"\n')
+        source = str(self.repo / '.config/zsh/dotfiles-update.zsh')
+        command = 'source "$1"; dotfiles-auto-update; ' + \
+                  'for i in {1..100}; do [[ -f "$__DOTFILES_AUTO_UPDATE_DIR/last-result" && ! -d "$__DOTFILES_AUTO_UPDATE_DIR/lock" ]] && exit 0; sleep 0.05; done; exit 1'
+        for expected, pull, apply in [('success', '0', '0'),
+                                       ('pull-failed', '1', '0'),
+                                       ('apply-failed', '0', '1')]:
+            (state / 'last-result').unlink(missing_ok=True)
+            if not lock.exists():
+                (state / 'last-attempt').unlink(missing_ok=True)
+            self.env.update(TEST_PULL_EXIT=pull, TEST_APPLY_EXIT=apply)
+            self.run_command('zsh', '-f', '-c', command, '--', source, timeout=10)
+            self.assertEqual((state / 'last-result').read_text().split()[1], expected)
+            self.assertFalse(lock.exists())
+            doctor = self.run_command('/bin/bash', str(self.repo / 'bin/dotfiles-doctor'), success=False)
+            self.assertIn({'success': '마지막 업데이트 성공',
+                           'pull-failed': '마지막 업데이트 pull 실패',
+                           'apply-failed': '마지막 업데이트 설정 적용 실패'}[expected], doctor.stdout)
+
+    def test_auto_update_preserves_live_and_fresh_locks(self):
+        if not shutil.which('zsh'):
+            self.skipTest('zsh required')
+        lock = self.home / '.cache/dotfiles/lock'
+        lock.mkdir(parents=True)
+        self.stub('git', 'echo unexpected >&2; exit 1\n')
+        source = str(self.repo / '.config/zsh/dotfiles-update.zsh')
+        for owner, age in [(str(os.getpid()), 1), ('99999999', None)]:
+            (lock / 'pid').write_text(owner)
+            timestamp = age if age is not None else time.time()
+            os.utime(lock, (timestamp, timestamp))
+            self.run_command('zsh', '-f', '-c', 'source "$1"; dotfiles-auto-update', '--', source)
+            self.assertEqual((lock / 'pid').read_text(), owner)
+            self.assertFalse((lock.parent / 'last-attempt').exists())
 
     def test_syntax_and_lockfile(self):
         scripts = list(self.repo.glob('*.sh')) + list((self.repo / 'bin').iterdir()) + list((self.repo / '.local/bin').iterdir()) + [self.repo / '.claude/hooks/notify.sh']
